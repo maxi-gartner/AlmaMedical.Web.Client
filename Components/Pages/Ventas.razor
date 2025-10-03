@@ -1,0 +1,398 @@
+﻿@page "/ventas"
+@rendermode InteractiveServer
+
+<PageTitle>Ventas - ALMA Medical</PageTitle>
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="display-4">Punto de Venta</h1>
+            <p class="text-muted">Registra ventas y genera comprobantes</p>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-success btn-lg" @onclick="NuevaVenta">
+                <i class="bi bi-plus-circle"></i> Nueva Venta
+            </button>
+        </div>
+    </div>
+
+    @if (ventaActual != null)
+    {
+        <div class="row">
+            <div class="col-md-7">
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Agregar Productos/Servicios</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Cliente (opcional)</label>
+                                <select class="form-select" @bind="ventaActual.ClienteNombre">
+                                    <option value="">Venta sin cliente</option>
+                                    <option value="María González">María González</option>
+                                    <option value="Carlos Pérez">Carlos Pérez</option>
+                                    <option value="Ana Martínez">Ana Martínez</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Tipo de precio</label>
+                                <select class="form-select" @bind="tipoPrecioSeleccionado">
+                                    <option value="Publico">Público</option>
+                                    <option value="Estudiante">Estudiante</option>
+                                    <option value="Profesional">Profesional</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="input-group mb-3">
+                            <input type="text" class="form-control" @bind="busquedaProducto" @bind:event="oninput"
+                                   placeholder="Buscar producto o servicio..." />
+                            <button class="btn btn-outline-secondary" @onclick="BuscarProductos">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(busquedaProducto) && ProductosFiltrados.Any())
+                        {
+                            <div class="list-group mb-3">
+                                @foreach (var prod in ProductosFiltrados)
+                                {
+                                    <button class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                                            @onclick="() => AgregarItemVenta(prod)">
+                                        <div>
+                                            <strong>@prod.Name</strong>
+                                            <small class="text-muted d-block">@prod.Code - @prod.Category</small>
+                                        </div>
+                                        <span class="badge bg-primary rounded-pill">$@ObtenerPrecio(prod).ToString("N2")</span>
+                                    </button>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-5">
+                <div class="card">
+                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Ticket de Venta</h5>
+                        <span>#@ventaActual.NumeroVenta</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <small class="text-muted">Fecha: @DateTime.Now.ToString("dd/MM/yyyy HH:mm")</small><br />
+                            <small class="text-muted">Cliente: @(string.IsNullOrWhiteSpace(ventaActual.ClienteNombre) ? "Sin cliente" : ventaActual.ClienteNombre)</small>
+                        </div>
+
+                        @if (ventaActual.Items.Any())
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Producto</th>
+                                            <th class="text-center">Cant.</th>
+                                            <th class="text-end">Precio</th>
+                                            <th class="text-end">Total</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var item in ventaActual.Items)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <small>@item.ProductoNombre</small>
+                                                </td>
+                                                <td class="text-center">
+                                                    <input type="number" class="form-control form-control-sm" style="width: 60px;"
+                                                           @bind="item.Cantidad" @bind:event="oninput" min="1" />
+                                                </td>
+                                                <td class="text-end">
+                                                    <small>$@item.PrecioUnitario.ToString("N2")</small>
+                                                </td>
+                                                <td class="text-end">
+                                                    <strong>$@item.Total.ToString("N2")</strong>
+                                                </td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => EliminarItem(item)">
+                                                        <i class="bi bi-x"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <hr />
+
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Subtotal:</span>
+                                <strong>$@ventaActual.Subtotal.ToString("N2")</strong>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Descuento:</span>
+                                <div class="input-group input-group-sm" style="width: 120px;">
+                                    <input type="number" class="form-control" @bind="ventaActual.Descuento" min="0" step="0.01" />
+                                    <span class="input-group-text">%</span>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between mb-3">
+                                <h4>TOTAL:</h4>
+                                <h4 class="text-success">$@ventaActual.Total.ToString("N2")</h4>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Método de pago</label>
+                                <select class="form-select" @bind="ventaActual.MetodoPago">
+                                    <option value="Efectivo">Efectivo</option>
+                                    <option value="Tarjeta">Tarjeta</option>
+                                    <option value="Transferencia">Transferencia</option>
+                                    <option value="MercadoPago">Mercado Pago</option>
+                                </select>
+                            </div>
+
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-success btn-lg" @onclick="FinalizarVenta">
+                                    <i class="bi bi-check-circle"></i> Finalizar Venta
+                                </button>
+                                <button class="btn btn-outline-danger" @onclick="CancelarVenta">
+                                    <i class="bi bi-x-circle"></i> Cancelar
+                                </button>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center text-muted py-5">
+                                <i class="bi bi-cart-x" style="font-size: 3rem;"></i>
+                                <p class="mt-2">Agregá productos para comenzar</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Historial de Ventas (@ventas.Count)</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>#</th>
+                                <th>Fecha</th>
+                                <th>Cliente</th>
+                                <th>Items</th>
+                                <th>Total</th>
+                                <th>Método Pago</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var venta in ventas.OrderByDescending(v => v.Fecha))
+                            {
+                                <tr>
+                                    <td><strong>@venta.NumeroVenta</strong></td>
+                                    <td>@venta.Fecha.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td>@(string.IsNullOrWhiteSpace(venta.ClienteNombre) ? "-" : venta.ClienteNombre)</td>
+                                    <td>@venta.Items.Count items</td>
+                                    <td><strong>$@venta.Total.ToString("N2")</strong></td>
+                                    <td>@venta.MetodoPago</td>
+                                    <td>
+                                        <span class="badge bg-success">Pagado</span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-md-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h3 class="text-success">$@ventas.Sum(v => v.Total).ToString("N2")</h3>
+                        <p class="mb-0">Total Vendido Hoy</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h3 class="text-primary">@ventas.Count</h3>
+                        <p class="mb-0">Ventas Realizadas</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h3 class="text-info">$@(ventas.Any() ? ventas.Average(v => v.Total).ToString("N2") : "0.00")</h3>
+                        <p class="mb-0">Ticket Promedio</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<VentaDto> ventas = new();
+    private VentaDto? ventaActual = null;
+    private string busquedaProducto = "";
+    private string tipoPrecioSeleccionado = "Publico";
+    private int numeroVentaActual = 1;
+
+    private List<ProductoDto> productosDisponibles = new()
+    {
+        new ProductoDto { Code = "TF-001", Name = "Limpieza Facial Profunda", Category = "Tratamientos Faciales", PrecioPublico = 8000, PrecioEstudiante = 6500, PrecioProfesional = 5500 },
+        new ProductoDto { Code = "TF-002", Name = "Peeling Químico", Category = "Tratamientos Faciales", PrecioPublico = 15000, PrecioEstudiante = 12000, PrecioProfesional = 10000 },
+        new ProductoDto { Code = "DEP-001", Name = "Depilación Definitiva - Piernas", Category = "Depilación", PrecioPublico = 18000, PrecioEstudiante = 15000, PrecioProfesional = 13000 },
+        new ProductoDto { Code = "PROD-001", Name = "Crema Hidratante Premium", Category = "Productos", PrecioPublico = 4500, PrecioEstudiante = 3800, PrecioProfesional = 3200 },
+        new ProductoDto { Code = "PROD-002", Name = "Serum Vitamina C", Category = "Productos", PrecioPublico = 6500, PrecioEstudiante = 5200, PrecioProfesional = 4500 }
+    };
+
+    protected override void OnInitialized()
+    {
+        ventas = new List<VentaDto>
+        {
+            new VentaDto
+            {
+                NumeroVenta = "V-001",
+                Fecha = DateTime.Now.AddHours(-2),
+                ClienteNombre = "María González",
+                MetodoPago = "Efectivo",
+                Items = new List<VentaItemDto>
+                {
+                    new VentaItemDto { ProductoNombre = "Limpieza Facial", Cantidad = 1, PrecioUnitario = 8000 }
+                }
+            },
+            new VentaDto
+            {
+                NumeroVenta = "V-002",
+                Fecha = DateTime.Now.AddHours(-1),
+                ClienteNombre = "",
+                MetodoPago = "Tarjeta",
+                Items = new List<VentaItemDto>
+                {
+                    new VentaItemDto { ProductoNombre = "Crema Hidratante", Cantidad = 2, PrecioUnitario = 4500 }
+                }
+            }
+        };
+        numeroVentaActual = ventas.Count + 1;
+    }
+
+    private List<ProductoDto> ProductosFiltrados =>
+        string.IsNullOrWhiteSpace(busquedaProducto)
+        ? new List<ProductoDto>()
+        : productosDisponibles.Where(p =>
+            p.Name.Contains(busquedaProducto, StringComparison.OrdinalIgnoreCase) ||
+            p.Code.Contains(busquedaProducto, StringComparison.OrdinalIgnoreCase)
+        ).Take(5).ToList();
+
+    private void NuevaVenta()
+    {
+        ventaActual = new VentaDto
+        {
+            NumeroVenta = $"V-{numeroVentaActual:000}",
+            Fecha = DateTime.Now,
+            MetodoPago = "Efectivo"
+        };
+    }
+
+    private decimal ObtenerPrecio(ProductoDto producto) => tipoPrecioSeleccionado switch
+    {
+        "Estudiante" => producto.PrecioEstudiante,
+        "Profesional" => producto.PrecioProfesional,
+        _ => producto.PrecioPublico
+    };
+
+    private void AgregarItemVenta(ProductoDto producto)
+    {
+        if (ventaActual == null) return;
+
+        var itemExistente = ventaActual.Items.FirstOrDefault(i => i.ProductoNombre == producto.Name);
+        if (itemExistente != null)
+        {
+            itemExistente.Cantidad++;
+        }
+        else
+        {
+            ventaActual.Items.Add(new VentaItemDto
+            {
+                ProductoNombre = producto.Name,
+                Cantidad = 1,
+                PrecioUnitario = ObtenerPrecio(producto)
+            });
+        }
+        busquedaProducto = "";
+    }
+
+    private void EliminarItem(VentaItemDto item)
+    {
+        ventaActual?.Items.Remove(item);
+    }
+
+    private void BuscarProductos()
+    {
+        // Fuerza actualización de la búsqueda
+        StateHasChanged();
+    }
+
+    private void FinalizarVenta()
+    {
+        if (ventaActual != null && ventaActual.Items.Any())
+        {
+            ventas.Add(ventaActual);
+            numeroVentaActual++;
+            ventaActual = null;
+            busquedaProducto = "";
+        }
+    }
+
+    private void CancelarVenta()
+    {
+        ventaActual = null;
+        busquedaProducto = "";
+    }
+
+    public class VentaDto
+    {
+        public string NumeroVenta { get; set; } = "";
+        public DateTime Fecha { get; set; }
+        public string ClienteNombre { get; set; } = "";
+        public string MetodoPago { get; set; } = "Efectivo";
+        public decimal Descuento { get; set; } = 0;
+        public List<VentaItemDto> Items { get; set; } = new();
+
+        public decimal Subtotal => Items.Sum(i => i.Total);
+        public decimal Total => Subtotal - (Subtotal * Descuento / 100);
+    }
+
+    public class VentaItemDto
+    {
+        public string ProductoNombre { get; set; } = "";
+        public int Cantidad { get; set; }
+        public decimal PrecioUnitario { get; set; }
+        public decimal Total => Cantidad * PrecioUnitario;
+    }
+
+    public class ProductoDto
+    {
+        public string Code { get; set; } = "";
+        public string Name { get; set; } = "";
+        public string Category { get; set; } = "";
+        public decimal PrecioPublico { get; set; }
+        public decimal PrecioEstudiante { get; set; }
+        public decimal PrecioProfesional { get; set; }
+    }
+}

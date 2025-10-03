@@ -1,0 +1,328 @@
+﻿@page "/productos"
+@rendermode InteractiveServer
+
+<PageTitle>Productos - ALMA Medical</PageTitle>
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="display-4">Gestión de Productos y Servicios</h1>
+            <p class="text-muted">Administra tu catálogo con precios diferenciados</p>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-primary btn-lg" @onclick="MostrarFormularioNuevo">
+                <i class="bi bi-plus-circle"></i> Nuevo Producto
+            </button>
+        </div>
+    </div>
+
+    @if (mostrarFormulario)
+    {
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">@(editando ? "Editar Producto" : "Nuevo Producto")</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Nombre</label>
+                        <input type="text" class="form-control" @bind="nuevoProducto.Name" placeholder="Ej: Crema Hidratante" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Código/SKU</label>
+                        <input type="text" class="form-control" @bind="nuevoProducto.Code" placeholder="SKU-001" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Tipo</label>
+                        <select class="form-select" @bind="nuevoProducto.ProductType">
+                            <option value="Product">Producto</option>
+                            <option value="Service">Servicio</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Categoría</label>
+                        <select class="form-select" @bind="nuevoProducto.Category">
+                            <option value="">Seleccionar...</option>
+                            <option value="Tratamientos Faciales">Tratamientos Faciales</option>
+                            <option value="Tratamientos Corporales">Tratamientos Corporales</option>
+                            <option value="Depilación">Depilación</option>
+                            <option value="Productos">Productos</option>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Descripción</label>
+                        <textarea class="form-control" rows="2" @bind="nuevoProducto.Description" placeholder="Descripción del producto o servicio"></textarea>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Precio Costo</label>
+                        <input type="number" step="0.01" class="form-control" @bind="nuevoProducto.CostPrice" placeholder="0.00" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Precio Público</label>
+                        <input type="number" step="0.01" class="form-control" @bind="nuevoProducto.PublicPrice" placeholder="0.00" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Precio Estudiante</label>
+                        <input type="number" step="0.01" class="form-control" @bind="nuevoProducto.StudentPrice" placeholder="0.00" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Precio Profesional</label>
+                        <input type="number" step="0.01" class="form-control" @bind="nuevoProducto.ProfessionalPrice" placeholder="0.00" />
+                    </div>
+                    @if (nuevoProducto.ProductType == "Product")
+                    {
+                        <div class="col-md-6">
+                            <label class="form-label">Stock Actual</label>
+                            <input type="number" class="form-control" @bind="nuevoProducto.CurrentStock" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Stock Mínimo (alerta)</label>
+                            <input type="number" class="form-control" @bind="nuevoProducto.MinStock" />
+                        </div>
+                    }
+                </div>
+                <div class="mt-3">
+                    <button class="btn btn-success me-2" @onclick="GuardarProducto">
+                        <i class="bi bi-check-circle"></i> Guardar
+                    </button>
+                    <button class="btn btn-secondary" @onclick="CancelarFormulario">
+                        <i class="bi bi-x-circle"></i> Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="row mb-3">
+        <div class="col-md-3">
+            <select class="form-select" @bind="filtroTipo">
+                <option value="">Todos los tipos</option>
+                <option value="Product">Productos</option>
+                <option value="Service">Servicios</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" @bind="filtroCategoria">
+                <option value="">Todas las categorías</option>
+                <option value="Tratamientos Faciales">Tratamientos Faciales</option>
+                <option value="Tratamientos Corporales">Tratamientos Corporales</option>
+                <option value="Depilación">Depilación</option>
+                <option value="Productos">Productos</option>
+            </select>
+        </div>
+        <div class="col-md-6">
+            <input type="text" class="form-control" @bind="busqueda" @bind:event="oninput" placeholder="Buscar producto o servicio..." />
+        </div>
+    </div>
+
+    <div class="row">
+        @foreach (var producto in ProductosFiltrados)
+        {
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-header bg-light">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">@producto.Name</h5>
+                            <span class="badge @(producto.ProductType == "Product" ? "bg-info" : "bg-success")">
+                                @(producto.ProductType == "Product" ? "Producto" : "Servicio")
+                            </span>
+                        </div>
+                        <small class="text-muted">@producto.Category</small>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small">@producto.Description</p>
+                        <p class="mb-1"><strong>Código:</strong> @producto.Code</p>
+
+                        <hr />
+
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <small class="text-muted d-block">Precio Público</small>
+                                <strong class="text-primary">$@producto.PublicPrice.ToString("N2")</strong>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted d-block">P. Estudiante</small>
+                                <strong class="text-success">$@producto.StudentPrice.ToString("N2")</strong>
+                            </div>
+                        </div>
+                        <div class="row text-center mt-2">
+                            <div class="col-6">
+                                <small class="text-muted d-block">P. Profesional</small>
+                                <strong class="text-warning">$@producto.ProfessionalPrice.ToString("N2")</strong>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted d-block">Costo</small>
+                                <strong>$@producto.CostPrice.ToString("N2")</strong>
+                            </div>
+                        </div>
+
+                        @if (producto.ProductType == "Product")
+                        {
+                            <hr />
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>Stock:</span>
+                                <span class="badge @(producto.CurrentStock <= producto.MinStock ? "bg-danger" : "bg-success")">
+                                    @producto.CurrentStock unidades
+                                </span>
+                            </div>
+                            @if (producto.CurrentStock <= producto.MinStock)
+                            {
+                                <small class="text-danger">
+                                    <i class="bi bi-exclamation-triangle"></i> Stock bajo - Mínimo: @producto.MinStock
+                                </small>
+                            }
+                        }
+                    </div>
+                    <div class="card-footer bg-white">
+                        <div class="btn-group w-100">
+                            <button class="btn btn-sm btn-outline-warning">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private List<ProductoDto> productos = new();
+    private ProductoDto nuevoProducto = new();
+    private bool mostrarFormulario = false;
+    private bool editando = false;
+    private string busqueda = "";
+    private string filtroTipo = "";
+    private string filtroCategoria = "";
+
+    protected override void OnInitialized()
+    {
+        // Datos de ejemplo
+        productos = new List<ProductoDto>
+        {
+            new ProductoDto {
+                Code = "TF-001",
+                Name = "Limpieza Facial Profunda",
+                ProductType = "Service",
+                Category = "Tratamientos Faciales",
+                Description = "Limpieza completa con extracción y mascarilla",
+                CostPrice = 2000,
+                PublicPrice = 8000,
+                StudentPrice = 6500,
+                ProfessionalPrice = 5500
+            },
+            new ProductoDto {
+                Code = "TF-002",
+                Name = "Peeling Químico",
+                ProductType = "Service",
+                Category = "Tratamientos Faciales",
+                Description = "Exfoliación química para renovación celular",
+                CostPrice = 3500,
+                PublicPrice = 15000,
+                StudentPrice = 12000,
+                ProfessionalPrice = 10000
+            },
+            new ProductoDto {
+                Code = "DEP-001",
+                Name = "Depilación Definitiva - Piernas",
+                ProductType = "Service",
+                Category = "Depilación",
+                Description = "Sesión de láser diodo en piernas completas",
+                CostPrice = 4000,
+                PublicPrice = 18000,
+                StudentPrice = 15000,
+                ProfessionalPrice = 13000
+            },
+            new ProductoDto {
+                Code = "PROD-001",
+                Name = "Crema Hidratante Premium",
+                ProductType = "Product",
+                Category = "Productos",
+                Description = "Crema facial con ácido hialurónico",
+                CostPrice = 1200,
+                PublicPrice = 4500,
+                StudentPrice = 3800,
+                ProfessionalPrice = 3200,
+                CurrentStock = 25,
+                MinStock = 10
+            },
+            new ProductoDto {
+                Code = "PROD-002",
+                Name = "Serum Vitamina C",
+                ProductType = "Product",
+                Category = "Productos",
+                Description = "Serum antioxidante con vitamina C pura",
+                CostPrice = 1800,
+                PublicPrice = 6500,
+                StudentPrice = 5200,
+                ProfessionalPrice = 4500,
+                CurrentStock = 5,
+                MinStock = 8
+            }
+        };
+    }
+
+    private List<ProductoDto> ProductosFiltrados
+    {
+        get
+        {
+            var resultado = productos.AsEnumerable();
+
+            if (!string.IsNullOrWhiteSpace(filtroTipo))
+                resultado = resultado.Where(p => p.ProductType == filtroTipo);
+
+            if (!string.IsNullOrWhiteSpace(filtroCategoria))
+                resultado = resultado.Where(p => p.Category == filtroCategoria);
+
+            if (!string.IsNullOrWhiteSpace(busqueda))
+                resultado = resultado.Where(p =>
+                    p.Name.Contains(busqueda, StringComparison.OrdinalIgnoreCase) ||
+                    (p.Code?.Contains(busqueda, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (p.Description?.Contains(busqueda, StringComparison.OrdinalIgnoreCase) ?? false)
+                );
+
+            return resultado.ToList();
+        }
+    }
+
+    private void MostrarFormularioNuevo()
+    {
+        nuevoProducto = new ProductoDto { ProductType = "Service" };
+        editando = false;
+        mostrarFormulario = true;
+    }
+
+    private void GuardarProducto()
+    {
+        if (!string.IsNullOrWhiteSpace(nuevoProducto.Name))
+        {
+            productos.Add(nuevoProducto);
+            mostrarFormulario = false;
+            nuevoProducto = new ProductoDto();
+        }
+    }
+
+    private void CancelarFormulario()
+    {
+        mostrarFormulario = false;
+        nuevoProducto = new ProductoDto();
+    }
+
+    public class ProductoDto
+    {
+        public string Code { get; set; } = "";
+        public string Name { get; set; } = "";
+        public string ProductType { get; set; } = "Product";
+        public string Category { get; set; } = "";
+        public string? Description { get; set; }
+        public decimal CostPrice { get; set; }
+        public decimal PublicPrice { get; set; }
+        public decimal StudentPrice { get; set; }
+        public decimal ProfessionalPrice { get; set; }
+        public int CurrentStock { get; set; }
+        public int MinStock { get; set; }
+    }
+}

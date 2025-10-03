@@ -1,0 +1,293 @@
+﻿@page "/turnos"
+@rendermode InteractiveServer
+
+<PageTitle>Turnos - ALMA Medical</PageTitle>
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="display-4">Agenda de Turnos</h1>
+            <p class="text-muted">Gestiona citas y reservas de tratamientos</p>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-primary btn-lg" @onclick="MostrarFormularioNuevo">
+                <i class="bi bi-calendar-plus"></i> Nuevo Turno
+            </button>
+        </div>
+    </div>
+
+    @if (mostrarFormulario)
+    {
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Agendar Nuevo Turno</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Cliente</label>
+                        <select class="form-select" @bind="nuevoTurno.ClienteNombre">
+                            <option value="">Seleccionar cliente...</option>
+                            <option value="María González">María González</option>
+                            <option value="Carlos Pérez">Carlos Pérez</option>
+                            <option value="Ana Martínez">Ana Martínez</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Servicio/Tratamiento</label>
+                        <select class="form-select" @bind="nuevoTurno.Servicio">
+                            <option value="">Seleccionar servicio...</option>
+                            <option value="Limpieza Facial Profunda">Limpieza Facial Profunda</option>
+                            <option value="Peeling Químico">Peeling Químico</option>
+                            <option value="Depilación Definitiva - Piernas">Depilación Definitiva - Piernas</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Fecha</label>
+                        <input type="date" class="form-control" @bind="nuevoTurno.Fecha" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Hora Inicio</label>
+                        <input type="time" class="form-control" @bind="nuevoTurno.HoraInicio" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Duración (minutos)</label>
+                        <input type="number" class="form-control" @bind="nuevoTurno.Duracion" placeholder="60" />
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Notas</label>
+                        <textarea class="form-control" rows="2" @bind="nuevoTurno.Notas" placeholder="Observaciones o preparación especial"></textarea>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <button class="btn btn-success me-2" @onclick="GuardarTurno">
+                        <i class="bi bi-check-circle"></i> Agendar
+                    </button>
+                    <button class="btn btn-secondary" @onclick="CancelarFormulario">
+                        <i class="bi bi-x-circle"></i> Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="row mb-3">
+        <div class="col-md-3">
+            <input type="date" class="form-control" @bind="fechaFiltro" @bind:event="oninput" />
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" @bind="estadoFiltro">
+                <option value="">Todos los estados</option>
+                <option value="Scheduled">Agendados</option>
+                <option value="Confirmed">Confirmados</option>
+                <option value="Completed">Completados</option>
+                <option value="Cancelled">Cancelados</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Turnos del Día (@TurnosFiltrados.Count)</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Hora</th>
+                            <th>Cliente</th>
+                            <th>Servicio</th>
+                            <th>Duración</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var turno in TurnosFiltrados.OrderBy(t => t.HoraInicio))
+                        {
+                            <tr class="@ObtenerClaseEstado(turno.Estado)">
+                                <td>
+                                    <strong>@turno.HoraInicio</strong>
+                                    <small class="text-muted d-block">@turno.Fecha.ToString("dd/MM/yyyy")</small>
+                                </td>
+                                <td>@turno.ClienteNombre</td>
+                                <td>@turno.Servicio</td>
+                                <td>@turno.Duracion min</td>
+                                <td>
+                                    <span class="badge @ObtenerBadgeEstado(turno.Estado)">
+                                        @ObtenerTextoEstado(turno.Estado)
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        @if (turno.Estado == "Scheduled")
+                                        {
+                                            <button class="btn btn-outline-success" @onclick="() => ConfirmarTurno(turno)" title="Confirmar">
+                                                <i class="bi bi-check-circle"></i>
+                                            </button>
+                                        }
+                                        @if (turno.Estado == "Confirmed")
+                                        {
+                                            <button class="btn btn-outline-primary" @onclick="() => CompletarTurno(turno)" title="Completar">
+                                                <i class="bi bi-check-all"></i>
+                                            </button>
+                                        }
+                                        <button class="btn btn-outline-warning" title="Editar">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-outline-danger" @onclick="() => CancelarTurno(turno)" title="Cancelar">
+                                            <i class="bi bi-x-circle"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="text-primary">@turnos.Count(t => t.Estado == "Scheduled")</h3>
+                    <p class="mb-0">Agendados</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="text-success">@turnos.Count(t => t.Estado == "Confirmed")</h3>
+                    <p class="mb-0">Confirmados</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="text-info">@turnos.Count(t => t.Estado == "Completed")</h3>
+                    <p class="mb-0">Completados</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="text-danger">@turnos.Count(t => t.Estado == "Cancelled")</h3>
+                    <p class="mb-0">Cancelados</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<TurnoDto> turnos = new();
+    private TurnoDto nuevoTurno = new();
+    private bool mostrarFormulario = false;
+    private DateTime fechaFiltro = DateTime.Today;
+    private string estadoFiltro = "";
+
+    protected override void OnInitialized()
+    {
+        var hoy = DateTime.Today;
+        turnos = new List<TurnoDto>
+    {
+        new TurnoDto { ClienteNombre = "María González", Servicio = "Limpieza Facial Profunda", Fecha = hoy, HoraInicio = new TimeOnly(9, 0), Duracion = 60, Estado = "Confirmed", Notas = "" },
+        new TurnoDto { ClienteNombre = "Carlos Pérez", Servicio = "Depilación Definitiva - Piernas", Fecha = hoy, HoraInicio = new TimeOnly(10, 30), Duracion = 90, Estado = "Scheduled", Notas = "Primera sesión" },
+        new TurnoDto { ClienteNombre = "Ana Martínez", Servicio = "Peeling Químico", Fecha = hoy, HoraInicio = new TimeOnly(14, 0), Duracion = 45, Estado = "Confirmed", Notas = "" },
+        new TurnoDto { ClienteNombre = "María González", Servicio = "Limpieza Facial Profunda", Fecha = hoy.AddDays(-1), HoraInicio = new TimeOnly(11, 0), Duracion = 60, Estado = "Completed", Notas = "" },
+        new TurnoDto { ClienteNombre = "Carlos Pérez", Servicio = "Limpieza Facial Profunda", Fecha = hoy.AddDays(1), HoraInicio = new TimeOnly(15, 0), Duracion = 60, Estado = "Scheduled", Notas = "" }
+    };
+    }
+
+    private List<TurnoDto> TurnosFiltrados
+    {
+        get
+        {
+            var resultado = turnos.Where(t => t.Fecha.Date == fechaFiltro.Date);
+
+            if (!string.IsNullOrWhiteSpace(estadoFiltro))
+                resultado = resultado.Where(t => t.Estado == estadoFiltro);
+
+            return resultado.ToList();
+        }
+    }
+
+    private void MostrarFormularioNuevo()
+    {
+        nuevoTurno = new TurnoDto { Fecha = fechaFiltro, Duracion = 60, Estado = "Scheduled" };
+        mostrarFormulario = true;
+    }
+
+    private void GuardarTurno()
+    {
+        if (!string.IsNullOrWhiteSpace(nuevoTurno.ClienteNombre) && !string.IsNullOrWhiteSpace(nuevoTurno.Servicio))
+        {
+            turnos.Add(nuevoTurno);
+            mostrarFormulario = false;
+            nuevoTurno = new TurnoDto();
+        }
+    }
+
+    private void CancelarFormulario()
+    {
+        mostrarFormulario = false;
+        nuevoTurno = new TurnoDto();
+    }
+
+    private void ConfirmarTurno(TurnoDto turno)
+    {
+        turno.Estado = "Confirmed";
+    }
+
+    private void CompletarTurno(TurnoDto turno)
+    {
+        turno.Estado = "Completed";
+    }
+
+    private void CancelarTurno(TurnoDto turno)
+    {
+        turno.Estado = "Cancelled";
+    }
+
+    private string ObtenerBadgeEstado(string estado) => estado switch
+    {
+        "Scheduled" => "bg-primary",
+        "Confirmed" => "bg-success",
+        "Completed" => "bg-info",
+        "Cancelled" => "bg-danger",
+        _ => "bg-secondary"
+    };
+
+    private string ObtenerTextoEstado(string estado) => estado switch
+    {
+        "Scheduled" => "Agendado",
+        "Confirmed" => "Confirmado",
+        "Completed" => "Completado",
+        "Cancelled" => "Cancelado",
+        _ => estado
+    };
+
+    private string ObtenerClaseEstado(string estado) => estado switch
+    {
+        "Cancelled" => "table-danger",
+        "Completed" => "table-success",
+        _ => ""
+    };
+
+    public class TurnoDto
+    {
+        public string ClienteNombre { get; set; } = "";
+        public string Servicio { get; set; } = "";
+        public DateTime Fecha { get; set; }
+        public TimeOnly HoraInicio { get; set; } = new TimeOnly(9, 0);
+        public int Duracion { get; set; }
+        public string Estado { get; set; } = "Scheduled";
+        public string? Notas { get; set; }
+    }
+}
