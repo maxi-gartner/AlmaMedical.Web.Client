@@ -1,5 +1,7 @@
 ﻿@page "/productos"
 @rendermode InteractiveServer
+@inject Services.CurrentUserService CurrentUser
+@inject Services.RolePermissionService PermissionService
 
 <PageTitle>Productos - ALMA Medical</PageTitle>
 
@@ -10,9 +12,12 @@
             <p class="text-muted">Administra tu catálogo con precios diferenciados</p>
         </div>
         <div class="col-auto">
-            <button class="btn btn-primary btn-lg" @onclick="MostrarFormularioNuevo">
-                <i class="bi bi-plus-circle"></i> Nuevo Producto
-            </button>
+            @if (PermissionService.HasPermission(CurrentUser.UserRole, Services.RolePermissionService.Permission.CreateProduct))
+            {
+                <button class="btn btn-primary btn-lg" @onclick="MostrarFormularioNuevo">
+                    <i class="bi bi-plus-circle"></i> Nuevo Producto
+                </button>
+            }
         </div>
     </div>
 
@@ -175,12 +180,18 @@
                     </div>
                     <div class="card-footer bg-white">
                         <div class="btn-group w-100">
-                            <button class="btn btn-sm btn-outline-warning">
-                                <i class="bi bi-pencil"></i>
-                            </button>
-                            <button class="btn btn-sm btn-outline-danger">
-                                <i class="bi bi-trash"></i>
-                            </button>
+                            @if (PermissionService.HasPermission(CurrentUser.UserRole, Services.RolePermissionService.Permission.EditProduct))
+                            {
+                                <button class="btn btn-sm btn-outline-warning">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                            }
+                            @if (PermissionService.HasPermission(CurrentUser.UserRole, Services.RolePermissionService.Permission.DeleteProduct))
+                            {
+                                <button class="btn btn-sm btn-outline-danger">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            }
                         </div>
                     </div>
                 </div>

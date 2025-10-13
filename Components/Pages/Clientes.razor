@@ -1,5 +1,7 @@
 ﻿@page "/clientes"
 @rendermode InteractiveServer
+@inject Services.CurrentUserService CurrentUser
+@inject Services.RolePermissionService PermissionService
 
 <PageTitle>Clientes - ALMA Medical</PageTitle>
 
@@ -9,11 +11,12 @@
             <h1 class="display-4">Gestión de Clientes</h1>
             <p class="text-muted">Administra tus pacientes y clientes</p>
         </div>
-        <div class="col-auto">
+        @if (PermissionService.HasPermission(CurrentUser.UserRole, Services.RolePermissionService.Permission.CreateClient))
+        {
             <button class="btn btn-primary btn-lg" @onclick="MostrarFormularioNuevo">
                 <i class="bi bi-plus-circle"></i> Nuevo Cliente
             </button>
-        </div>
+        }
     </div>
 
     @if (mostrarFormulario)
@@ -101,15 +104,24 @@
                                 <td>@cliente.DocumentNumber</td>
                                 <td>@CalcularEdad(cliente.DateOfBirth)</td>
                                 <td>
-                                    <button class="btn btn-sm btn-outline-primary me-1" title="Ver detalles">
-                                        <i class="bi bi-eye"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-warning me-1" title="Editar">
-                                        <i class="bi bi-pencil"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger" title="Eliminar">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
+                                    @if (PermissionService.HasPermission(CurrentUser.UserRole, Services.RolePermissionService.Permission.ViewClientHistory))
+                                    {
+                                        <button class="btn btn-sm btn-outline-primary me-1" title="Ver detalles">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    }
+                                    @if (PermissionService.HasPermission(CurrentUser.UserRole, Services.RolePermissionService.Permission.EditClient))
+                                    {
+                                        <button class="btn btn-sm btn-outline-warning me-1" title="Editar">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                    }
+                                    @if (PermissionService.HasPermission(CurrentUser.UserRole, Services.RolePermissionService.Permission.DeleteClient))
+                                    {
+                                        <button class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    }
                                 </td>
                             </tr>
                         }

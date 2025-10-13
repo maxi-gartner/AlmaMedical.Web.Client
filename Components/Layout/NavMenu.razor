@@ -1,47 +1,148 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
+﻿@rendermode InteractiveServer
+@inject Services.CurrentUserService CurrentUser
+@inject Services.RolePermissionService PermissionService
+@inject NavigationManager Navigation
+@implements IDisposable
+
+<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="">🏥 ALMA Medical</a>
+        <div class="text-white small">
+            <i class="bi bi-person-circle"></i> @CurrentUser.FullName
+            <span class="badge bg-info ms-2">@GetRoleDisplayName()</span>
+        </div>
     </div>
+</div>
+<div class="bg-warning text-dark p-2">
+    <small>
+        <strong>DEBUG:</strong> Rol actual: @CurrentUser.UserRole |
+        Puede ver gastos: @PermissionService.HasPermission(CurrentUser.UserRole, Services.RolePermissionService.Permission.ViewExpenses)
+    </small>
 </div>
 
 <input type="checkbox" title="Navigation menu" class="navbar-toggler" />
 
 <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
     <nav class="flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill" aria-hidden="true"></span> Dashboard
-            </NavLink>
-        </div>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="clientes">
-                <span class="bi bi-people-fill" aria-hidden="true"></span> Clientes
-            </NavLink>
-        </div>
+        @if (PermissionService.HasPermission(CurrentUser.UserRole, Services.RolePermissionService.Permission.ViewDashboard))
+        {
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                    <span class="bi bi-house-door-fill" aria-hidden="true"></span> Dashboard
+                </NavLink>
+            </div>
+        }
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="productos">
-                <span class="bi bi-box-fill" aria-hidden="true"></span> Productos
-            </NavLink>
-        </div>
+        @if (PermissionService.HasPermission(CurrentUser.UserRole, Services.RolePermissionService.Permission.ViewClients))
+        {
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="clientes">
+                    <span class="bi bi-people-fill" aria-hidden="true"></span> Clientes
+                </NavLink>
+            </div>
+        }
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="turnos">
-                <span class="bi bi-calendar-check-fill" aria-hidden="true"></span> Turnos
-            </NavLink>
-        </div>
+        @if (PermissionService.HasPermission(CurrentUser.UserRole, Services.RolePermissionService.Permission.ViewProducts))
+        {
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="productos">
+                    <span class="bi bi-box-fill" aria-hidden="true"></span> Productos
+                </NavLink>
+            </div>
+        }
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="ventas">
-                <span class="bi bi-cart-fill" aria-hidden="true"></span> Ventas
-            </NavLink>
-        </div>
+        @if (PermissionService.HasPermission(CurrentUser.UserRole, Services.RolePermissionService.Permission.ViewAppointments))
+        {
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="turnos">
+                    <span class="bi bi-calendar-check-fill" aria-hidden="true"></span> Turnos
+                </NavLink>
+            </div>
+        }
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="gastos">
-                <span class="bi bi-receipt" aria-hidden="true"></span> Gastos
-            </NavLink>
+        @if (PermissionService.HasPermission(CurrentUser.UserRole, Services.RolePermissionService.Permission.ViewSales))
+        {
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="ventas">
+                    <span class="bi bi-cart-fill" aria-hidden="true"></span> Ventas
+                </NavLink>
+            </div>
+        }
+
+        @if (PermissionService.HasPermission(CurrentUser.UserRole, Services.RolePermissionService.Permission.ViewExpenses))
+        {
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="gastos">
+                    <span class="bi bi-receipt" aria-hidden="true"></span> Gastos
+                </NavLink>
+            </div>
+        }
+
+        <hr class="text-white-50" />
+
+        @* Solo admins ven configuraciones *@
+        @if (CurrentUser.UserRole == "TenantAdmin" || CurrentUser.UserRole == "SuperAdmin")
+        {
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="configuracion">
+                    <span class="bi bi-gear-fill" aria-hidden="true"></span> Configuración
+                </NavLink>
+            </div>
+        }
+
+        @* Selector de rol para testing *@
+        <div class="nav-item px-3 mt-3">
+            <div class="text-white-50 small mb-2">Cambiar rol (testing):</div>
+            <select class="form-select form-select-sm" @onchange="CambiarRol">
+                <option value="TenantAdmin" selected="@(CurrentUser.UserRole == "TenantAdmin")">Dueño (Admin)</option>
+                <option value="Professional" selected="@(CurrentUser.UserRole == "Professional")">Profesional</option>
+                <option value="Receptionist" selected="@(CurrentUser.UserRole == "Receptionist")">Recepcionista</option>
+            </select>
         </div>
     </nav>
 </div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        // Suscribirse al evento de cambio de rol
+        CurrentUser.OnRoleChanged += OnRoleChangedHandler;
+    }
+
+    private void OnRoleChangedHandler()
+    {
+        InvokeAsync(StateHasChanged); // Actualizar UI
+    }
+
+    public void Dispose()
+    {
+        // Desuscribirse cuando se destruya el componente
+        CurrentUser.OnRoleChanged -= OnRoleChangedHandler;
+    }
+
+    private string GetRoleDisplayName() => CurrentUser.UserRole switch
+    {
+        "SuperAdmin" => "Super Admin",
+        "TenantAdmin" => "Administrador",
+        "Professional" => "Profesional",
+        "Receptionist" => "Recepcionista",
+        "Customer" => "Cliente",
+        _ => CurrentUser.UserRole
+    };
+
+    private void CambiarRol(ChangeEventArgs e)
+    {
+        if (e.Value != null)
+        {
+            var nuevoRol = e.Value.ToString()!;
+            CurrentUser.SetRole(nuevoRol);
+            StateHasChanged();
+
+            // Forzar navegación para recrear el componente
+            var uri = Navigation.Uri;
+            Navigation.NavigateTo("/", forceLoad: false);
+            Navigation.NavigateTo(uri.Replace(Navigation.BaseUri, "/"), forceLoad: false);
+        }
+    }
+}

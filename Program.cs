@@ -3,6 +3,9 @@ using AlmaMedical.Web.Client.Components;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+// Registrar servicio de permisos
+builder.Services.AddSingleton<AlmaMedical.Web.Client.Services.RolePermissionService>();
+builder.Services.AddScoped<AlmaMedical.Web.Client.Services.CurrentUserService>();
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
