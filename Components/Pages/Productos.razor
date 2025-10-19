@@ -6,46 +6,252 @@
 
 <PageTitle>Productos - ALMA Medical</PageTitle>
 
-<div class="container-fluid">
-    <div class="row mb-4">
-        <div class="col">
-            <h1 class="display-4">Gestión de Productos y Servicios</h1>
-            <p class="text-muted">Administra tu catálogo con precios diferenciados</p>
+<div class="min-h-screen bg-gray-50/50">
+    <!-- Header -->
+    <div class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl p-6 mb-6 border border-gray-100">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+                <h1 class="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                    Gestión de Productos y Servicios
+                </h1>
+                <p class="text-gray-600 mt-1">Administra tu catálogo con precios diferenciados</p>
+            </div>
+            @if (HasPermission(Permission.CreateProduct))
+            {
+                <button @onclick="MostrarFormularioNuevo"
+                        class="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-6 py-3 rounded-xl flex items-center gap-2 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Nuevo Producto
+                </button>
+            }
         </div>
-        @if (HasPermission(Permission.CreateProduct))
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-6 text-white shadow-xl">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-purple-100 text-sm">Total Productos</p>
+                    <p class="text-3xl font-bold mt-2">@productos.Count(p => p.ProductType == "Product")</p>
+                </div>
+                <svg class="w-12 h-12 text-purple-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                </svg>
+            </div>
+        </div>
+
+        <div class="bg-gradient-to-br from-pink-500 to-pink-600 rounded-2xl p-6 text-white shadow-xl">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-pink-100 text-sm">Total Servicios</p>
+                    <p class="text-3xl font-bold mt-2">@productos.Count(p => p.ProductType == "Service")</p>
+                </div>
+                <svg class="w-12 h-12 text-pink-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+            </div>
+        </div>
+
+        <div class="bg-gradient-to-br from-yellow-500 to-orange-600 rounded-2xl p-6 text-white shadow-xl">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-yellow-100 text-sm">Stock Bajo</p>
+                    <p class="text-3xl font-bold mt-2">@productos.Count(p => p.ProductType == "Product" && p.CurrentStock <= p.MinStock)</p>
+                </div>
+                <svg class="w-12 h-12 text-yellow-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+            </div>
+        </div>
+
+        <div class="bg-gradient-to-br from-green-500 to-teal-600 rounded-2xl p-6 text-white shadow-xl">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-green-100 text-sm">Valor Inventario</p>
+                    <p class="text-2xl font-bold mt-2">$@productos.Where(p => p.ProductType == "Product").Sum(p => p.CurrentStock * p.CostPrice).ToString("N0")</p>
+                </div>
+                <svg class="w-12 h-12 text-green-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros y búsqueda -->
+    <div class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl p-6 mb-6 border border-gray-100">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Tipo</label>
+                <select @bind="filtroTipo"
+                        class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-300 bg-gray-50/50 focus:bg-white">
+                    <option value="">Todos los tipos</option>
+                    <option value="Product">Productos</option>
+                    <option value="Service">Servicios</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Categoría</label>
+                <select @bind="filtroCategoria"
+                        class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-300 bg-gray-50/50 focus:bg-white">
+                    <option value="">Todas las categorías</option>
+                    <option value="Tratamientos Faciales">Tratamientos Faciales</option>
+                    <option value="Tratamientos Corporales">Tratamientos Corporales</option>
+                    <option value="Depilación">Depilación</option>
+                    <option value="Productos">Productos</option>
+                </select>
+            </div>
+            <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Buscar</label>
+                <div class="relative">
+                    <svg class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <input type="text" @bind="busqueda" @bind:event="oninput"
+                           class="w-full pl-12 pr-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-300 bg-gray-50/50 focus:bg-white"
+                           placeholder="Buscar producto o servicio..." />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grid de productos -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        @foreach (var producto in ProductosFiltrados)
         {
-            <button class="btn btn-primary btn-lg" @onclick="MostrarFormularioNuevo">
-                <i class="bi bi-plus-circle"></i> Nuevo Producto
-            </button>
+            <div class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-100 overflow-hidden hover:shadow-2xl hover:scale-105 transition-all duration-300">
+                <!-- Header del card -->
+                <div class="p-4 bg-gradient-to-r @(producto.ProductType == "Product" ? "from-purple-500 to-pink-500" : "from-blue-500 to-indigo-500")">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <h3 class="text-white font-bold text-lg">@producto.Name</h3>
+                            <p class="text-white/80 text-sm mt-1">@producto.Category</p>
+                        </div>
+                        <span class="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-white text-xs font-semibold">
+                            @(producto.ProductType == "Product" ? "Producto" : "Servicio")
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Body del card -->
+                <div class="p-4 space-y-4">
+                    <div>
+                        <p class="text-gray-600 text-sm line-clamp-2">@producto.Description</p>
+                        <p class="text-gray-500 text-xs mt-2">Código: @producto.Code</p>
+                    </div>
+
+                    <!-- Precios -->
+                    <div class="grid grid-cols-2 gap-2 pt-3 border-t border-gray-200">
+                        <div class="text-center">
+                            <p class="text-xs text-gray-500">P. Público</p>
+                            <p class="text-lg font-bold text-purple-600">$@producto.PublicPrice.ToString("N0")</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-xs text-gray-500">P. Estudiante</p>
+                            <p class="text-lg font-bold text-green-600">$@producto.StudentPrice.ToString("N0")</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-xs text-gray-500">P. Profesional</p>
+                            <p class="text-lg font-bold text-orange-600">$@producto.ProfessionalPrice.ToString("N0")</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-xs text-gray-500">Costo</p>
+                            <p class="text-lg font-bold text-gray-600">$@producto.CostPrice.ToString("N0")</p>
+                        </div>
+                    </div>
+
+                    <!-- Stock (solo para productos) -->
+                    @if (producto.ProductType == "Product")
+                    {
+                        <div class="pt-3 border-t border-gray-200">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-600">Stock:</span>
+                                <span class="px-3 py-1 rounded-full text-sm font-semibold @(producto.CurrentStock <= producto.MinStock ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800")">
+                                    @producto.CurrentStock unidades
+                                </span>
+                            </div>
+                            @if (producto.CurrentStock <= producto.MinStock)
+                            {
+                                <div class="mt-2 flex items-center gap-2 text-red-600">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                    </svg>
+                                    <span class="text-xs">Stock bajo - Mínimo: @producto.MinStock</span>
+                                </div>
+                            }
+                        </div>
+                    }
+
+                    <!-- Acciones -->
+                    <div class="flex gap-2 pt-3">
+                        @if (HasPermission(Permission.EditProduct))
+                        {
+                            <button class="flex-1 px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-xl hover:from-yellow-600 hover:to-orange-600 transition-all duration-300 flex items-center justify-center gap-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                                Editar
+                            </button>
+                        }
+                        @if (HasPermission(Permission.DeleteProduct))
+                        {
+                            <button class="px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-xl hover:from-red-600 hover:to-pink-600 transition-all duration-300">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
         }
     </div>
 
+    <!-- Modal de Formulario -->
     @if (mostrarFormulario)
     {
-        <div class="card mb-4">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">@(editando ? "Editar Producto" : "Nuevo Producto")</h5>
-            </div>
-            <div class="card-body">
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <label class="form-label">Nombre</label>
-                        <input type="text" class="form-control" @bind="nuevoProducto.Name" placeholder="Ej: Crema Hidratante" />
+        <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div class="bg-white/95 backdrop-blur-sm rounded-2xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-100 transform transition-all">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900">@(editando ? "Editar Producto" : "Nuevo Producto")</h2>
+                    <button @onclick="CancelarFormulario"
+                            class="text-gray-500 hover:text-gray-700 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Nombre</label>
+                        <input type="text" @bind="nuevoProducto.Name"
+                               class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-300 bg-gray-50/50 focus:bg-white"
+                               placeholder="Ej: Crema Hidratante" />
                     </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Código/SKU</label>
-                        <input type="text" class="form-control" @bind="nuevoProducto.Code" placeholder="SKU-001" />
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Código/SKU</label>
+                        <input type="text" @bind="nuevoProducto.Code"
+                               class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-300 bg-gray-50/50 focus:bg-white"
+                               placeholder="SKU-001" />
                     </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Tipo</label>
-                        <select class="form-select" @bind="nuevoProducto.ProductType">
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Tipo</label>
+                        <select @bind="nuevoProducto.ProductType"
+                                class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-300 bg-gray-50/50 focus:bg-white">
                             <option value="Product">Producto</option>
                             <option value="Service">Servicio</option>
                         </select>
                     </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Categoría</label>
-                        <select class="form-select" @bind="nuevoProducto.Category">
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Categoría</label>
+                        <select @bind="nuevoProducto.Category"
+                                class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-300 bg-gray-50/50 focus:bg-white">
                             <option value="">Seleccionar...</option>
                             <option value="Tratamientos Faciales">Tratamientos Faciales</option>
                             <option value="Tratamientos Corporales">Tratamientos Corporales</option>
@@ -53,150 +259,79 @@
                             <option value="Productos">Productos</option>
                         </select>
                     </div>
-                    <div class="col-12">
-                        <label class="form-label">Descripción</label>
-                        <textarea class="form-control" rows="2" @bind="nuevoProducto.Description" placeholder="Descripción del producto o servicio"></textarea>
+
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Descripción</label>
+                        <textarea @bind="nuevoProducto.Description" rows="3"
+                                  class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-300 bg-gray-50/50 focus:bg-white"
+                                  placeholder="Descripción del producto o servicio"></textarea>
                     </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Precio Costo</label>
-                        <input type="number" step="0.01" class="form-control" @bind="nuevoProducto.CostPrice" placeholder="0.00" />
+
+                    <!-- Precios -->
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3">Precios</h3>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Precio Costo</label>
+                                <input type="number" step="0.01" @bind="nuevoProducto.CostPrice"
+                                       class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-300 bg-gray-50/50 focus:bg-white"
+                                       placeholder="0.00" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Precio Público</label>
+                                <input type="number" step="0.01" @bind="nuevoProducto.PublicPrice"
+                                       class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-300 bg-gray-50/50 focus:bg-white"
+                                       placeholder="0.00" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Precio Estudiante</label>
+                                <input type="number" step="0.01" @bind="nuevoProducto.StudentPrice"
+                                       class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-300 bg-gray-50/50 focus:bg-white"
+                                       placeholder="0.00" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Precio Profesional</label>
+                                <input type="number" step="0.01" @bind="nuevoProducto.ProfessionalPrice"
+                                       class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-300 bg-gray-50/50 focus:bg-white"
+                                       placeholder="0.00" />
+                            </div>
+                        </div>
                     </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Precio Público</label>
-                        <input type="number" step="0.01" class="form-control" @bind="nuevoProducto.PublicPrice" placeholder="0.00" />
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Precio Estudiante</label>
-                        <input type="number" step="0.01" class="form-control" @bind="nuevoProducto.StudentPrice" placeholder="0.00" />
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Precio Profesional</label>
-                        <input type="number" step="0.01" class="form-control" @bind="nuevoProducto.ProfessionalPrice" placeholder="0.00" />
-                    </div>
+
+                    <!-- Stock (solo para productos) -->
                     @if (nuevoProducto.ProductType == "Product")
                     {
-                        <div class="col-md-6">
-                            <label class="form-label">Stock Actual</label>
-                            <input type="number" class="form-control" @bind="nuevoProducto.CurrentStock" />
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Stock Mínimo (alerta)</label>
-                            <input type="number" class="form-control" @bind="nuevoProducto.MinStock" />
+                        <div class="md:col-span-2">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-3">Control de Stock</h3>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Stock Actual</label>
+                                    <input type="number" @bind="nuevoProducto.CurrentStock"
+                                           class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-300 bg-gray-50/50 focus:bg-white" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Stock Mínimo (alerta)</label>
+                                    <input type="number" @bind="nuevoProducto.MinStock"
+                                           class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-300 bg-gray-50/50 focus:bg-white" />
+                                </div>
+                            </div>
                         </div>
                     }
                 </div>
-                <div class="mt-3">
-                    <button class="btn btn-success me-2" @onclick="GuardarProducto">
-                        <i class="bi bi-check-circle"></i> Guardar
+
+                <div class="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-200">
+                    <button @onclick="CancelarFormulario"
+                            class="px-6 py-3 border-2 border-gray-300 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all duration-300 text-gray-700 font-medium">
+                        Cancelar
                     </button>
-                    <button class="btn btn-secondary" @onclick="CancelarFormulario">
-                        <i class="bi bi-x-circle"></i> Cancelar
+                    <button @onclick="GuardarProducto"
+                            class="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl font-medium">
+                        Guardar Producto
                     </button>
                 </div>
             </div>
         </div>
     }
-
-    <div class="row mb-3">
-        <div class="col-md-3">
-            <select class="form-select" @bind="filtroTipo">
-                <option value="">Todos los tipos</option>
-                <option value="Product">Productos</option>
-                <option value="Service">Servicios</option>
-            </select>
-        </div>
-        <div class="col-md-3">
-            <select class="form-select" @bind="filtroCategoria">
-                <option value="">Todas las categorías</option>
-                <option value="Tratamientos Faciales">Tratamientos Faciales</option>
-                <option value="Tratamientos Corporales">Tratamientos Corporales</option>
-                <option value="Depilación">Depilación</option>
-                <option value="Productos">Productos</option>
-            </select>
-        </div>
-        <div class="col-md-6">
-            <input type="text" class="form-control" @bind="busqueda" @bind:event="oninput" placeholder="Buscar producto o servicio..." />
-        </div>
-    </div>
-
-    <div class="row">
-        @foreach (var producto in ProductosFiltrados)
-        {
-            <div class="col-md-6 col-lg-4 mb-4">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-header bg-light">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">@producto.Name</h5>
-                            <span class="badge @(producto.ProductType == "Product" ? "bg-info" : "bg-success")">
-                                @(producto.ProductType == "Product" ? "Producto" : "Servicio")
-                            </span>
-                        </div>
-                        <small class="text-muted">@producto.Category</small>
-                    </div>
-                    <div class="card-body">
-                        <p class="text-muted small">@producto.Description</p>
-                        <p class="mb-1"><strong>Código:</strong> @producto.Code</p>
-
-                        <hr />
-
-                        <div class="row text-center">
-                            <div class="col-6">
-                                <small class="text-muted d-block">Precio Público</small>
-                                <strong class="text-primary">$@producto.PublicPrice.ToString("N2")</strong>
-                            </div>
-                            <div class="col-6">
-                                <small class="text-muted d-block">P. Estudiante</small>
-                                <strong class="text-success">$@producto.StudentPrice.ToString("N2")</strong>
-                            </div>
-                        </div>
-                        <div class="row text-center mt-2">
-                            <div class="col-6">
-                                <small class="text-muted d-block">P. Profesional</small>
-                                <strong class="text-warning">$@producto.ProfessionalPrice.ToString("N2")</strong>
-                            </div>
-                            <div class="col-6">
-                                <small class="text-muted d-block">Costo</small>
-                                <strong>$@producto.CostPrice.ToString("N2")</strong>
-                            </div>
-                        </div>
-
-                        @if (producto.ProductType == "Product")
-                        {
-                            <hr />
-                            <div class="d-flex justify-content-between align-items-center">
-                                <span>Stock:</span>
-                                <span class="badge @(producto.CurrentStock <= producto.MinStock ? "bg-danger" : "bg-success")">
-                                    @producto.CurrentStock unidades
-                                </span>
-                            </div>
-                            @if (producto.CurrentStock <= producto.MinStock)
-                            {
-                                <small class="text-danger">
-                                    <i class="bi bi-exclamation-triangle"></i> Stock bajo - Mínimo: @producto.MinStock
-                                </small>
-                            }
-                        }
-                    </div>
-                    <div class="card-footer bg-white">
-                        <div class="btn-group w-100">
-                            @if (HasPermission(Permission.EditProduct))
-                            {
-                                <button class="btn btn-sm btn-outline-warning">
-                                    <i class="bi bi-pencil"></i>
-                                </button>
-                            }
-                            @if (HasPermission(Permission.DeleteProduct))
-                            {
-                                <button class="btn btn-sm btn-outline-danger">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            }
-                        </div>
-                    </div>
-                </div>
-            </div>
-        }
-    </div>
 </div>
 
 @code {
@@ -210,6 +345,8 @@
 
     protected override void OnInitialized()
     {
+        base.OnInitialized();
+
         // Datos de ejemplo
         productos = new List<ProductoDto>
         {

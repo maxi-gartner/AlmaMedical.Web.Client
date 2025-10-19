@@ -1,20 +1,41 @@
 ﻿@inherits LayoutComponentBase
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+<div class="min-h-screen bg-gray-50">
+    <!-- Sidebar -->
+    <NavMenu />
+
+    <!-- Main content con margen para el sidebar -->
+    <main class="ml-64 min-h-screen">
+        <!-- Top bar -->
+        <div class="bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
+            <div class="flex justify-between items-center">
+                <h2 class="text-xl font-semibold text-gray-800">Panel de Control</h2>
+                <a href="https://learn.microsoft.com/aspnet/core/" target="_blank"
+                   class="text-sm text-blue-600 hover:text-blue-700 transition-colors">
+                    Ayuda
+                </a>
+            </div>
         </div>
-        <article class="content px-4">
+
+        <!-- Page content -->
+        <article class="p-6">
             @Body
         </article>
     </main>
 </div>
-<div id="blazor-error-ui">
-    An unhandled error has occurred.
-    <a href="" class="reload">Reload</a>
-    <a class="dismiss">🗙</a>
+
+<div id="blazor-error-ui" class="fixed bottom-0 right-0 left-64 bg-red-100 border-t-4 border-red-500 text-red-700 p-4 shadow-lg z-50">
+    <div class="flex items-center justify-between">
+        <div class="flex items-center">
+            <span class="text-lg mr-2">⚠️</span>
+            <span>Ha ocurrido un error inesperado.</span>
+        </div>
+        <div class="flex gap-2">
+            <a href="" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">Recargar</a>
+            <button class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                    onclick="document.getElementById('blazor-error-ui').style.display='none'">
+                Cerrar
+            </button>
+        </div>
+    </div>
 </div>

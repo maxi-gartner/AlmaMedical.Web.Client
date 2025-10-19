@@ -1,133 +1,194 @@
 ﻿@page "/clientes"
 @rendermode InteractiveServer
-@inject Services.CurrentUserService CurrentUser
-@inject Services.RolePermissionService PermissionService
+@inherits AlmaMedical.Web.Client.Base.AuthorizedComponentBase
+@using AlmaMedical.Web.Client.Services
+@using static AlmaMedical.Web.Client.Services.RolePermissionService
 
 <PageTitle>Clientes - ALMA Medical</PageTitle>
 
-<div class="container-fluid">
-    <div class="row mb-4">
-        <div class="col">
-            <h1 class="display-4">Gestión de Clientes</h1>
-            <p class="text-muted">Administra tus pacientes y clientes</p>
+<div class="min-h-screen">
+    <!-- Header -->
+    <div class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl p-6 mb-6 border-2 border-gray-100">
+        <div class="flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                    Gestión de Clientes
+                </h1>
+                <p class="text-gray-600 mt-1">Administra tus pacientes y clientes</p>
+            </div>
+            @if (HasPermission(Permission.CreateClient))
+            {
+                <button @onclick="MostrarFormularioNuevo"
+                        class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-3 rounded-xl flex items-center gap-2 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                    </svg>
+                    Nuevo Cliente
+                </button>
+            }
         </div>
-        @if (PermissionService.HasPermission(CurrentUser.UserRole, Services.RolePermissionService.Permission.CreateClient))
-        {
-            <button class="btn btn-primary btn-lg" @onclick="MostrarFormularioNuevo">
-                <i class="bi bi-plus-circle"></i> Nuevo Cliente
-            </button>
-        }
     </div>
 
+    <!-- Formulario Modal -->
     @if (mostrarFormulario)
     {
-        <div class="card mb-4">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">Nuevo Cliente</h5>
-            </div>
-            <div class="card-body">
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <label class="form-label">Nombre</label>
-                        <input type="text" class="form-control" @bind="nuevoCliente.FirstName" placeholder="Nombre" />
+        <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div class="bg-white/95 backdrop-blur-sm rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl border-2 border-gray-100 transform transition-all">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900">Nuevo Cliente</h2>
+                    <button @onclick="CancelarFormulario"
+                            class="text-gray-500 hover:text-gray-700 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Nombre</label>
+                        <input type="text" @bind="nuevoCliente.FirstName"
+                               class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 bg-gray-50/50 focus:bg-white"
+                               placeholder="Nombre" />
                     </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Apellido</label>
-                        <input type="text" class="form-control" @bind="nuevoCliente.LastName" placeholder="Apellido" />
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Apellido</label>
+                        <input type="text" @bind="nuevoCliente.LastName"
+                               class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 bg-gray-50/50 focus:bg-white"
+                               placeholder="Apellido" />
                     </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Email</label>
-                        <input type="email" class="form-control" @bind="nuevoCliente.Email" placeholder="email@ejemplo.com" />
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                        <input type="email" @bind="nuevoCliente.Email"
+                               class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 bg-gray-50/50 focus:bg-white"
+                               placeholder="email@ejemplo.com" />
                     </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Teléfono</label>
-                        <input type="tel" class="form-control" @bind="nuevoCliente.Phone" placeholder="+54 9 11 1234-5678" />
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Teléfono</label>
+                        <input type="tel" @bind="nuevoCliente.Phone"
+                               class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 bg-gray-50/50 focus:bg-white"
+                               placeholder="+54 9 11 1234-5678" />
                     </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Fecha de Nacimiento</label>
-                        <input type="date" class="form-control" @bind="nuevoCliente.DateOfBirth" />
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Fecha de Nacimiento</label>
+                        <input type="date" @bind="nuevoCliente.DateOfBirth"
+                               class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 bg-gray-50/50 focus:bg-white" />
                     </div>
-                    <div class="col-md-6">
-                        <label class="form-label">DNI</label>
-                        <input type="text" class="form-control" @bind="nuevoCliente.DocumentNumber" placeholder="12345678" />
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">DNI</label>
+                        <input type="text" @bind="nuevoCliente.DocumentNumber"
+                               class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 bg-gray-50/50 focus:bg-white"
+                               placeholder="12345678" />
                     </div>
-                    <div class="col-12">
-                        <label class="form-label">Notas</label>
-                        <textarea class="form-control" rows="3" @bind="nuevoCliente.Notes" placeholder="Observaciones, alergias, tratamientos previos..."></textarea>
+
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Notas</label>
+                        <textarea @bind="nuevoCliente.Notes" rows="3"
+                                  class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 bg-gray-50/50 focus:bg-white"
+                                  placeholder="Observaciones, alergias, tratamientos previos..."></textarea>
                     </div>
                 </div>
-                <div class="mt-3">
-                    <button class="btn btn-success me-2" @onclick="GuardarCliente">
-                        <i class="bi bi-check-circle"></i> Guardar
+
+                <div class="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-200">
+                    <button @onclick="CancelarFormulario"
+                            class="px-6 py-3 border-2 border-gray-300 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all duration-300 text-gray-700 font-medium">
+                        Cancelar
                     </button>
-                    <button class="btn btn-secondary" @onclick="CancelarFormulario">
-                        <i class="bi bi-x-circle"></i> Cancelar
+                    <button @onclick="GuardarCliente"
+                            class="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl font-medium">
+                        Guardar Cliente
                     </button>
                 </div>
             </div>
         </div>
     }
 
-    <div class="card">
-        <div class="card-header">
-            <div class="row align-items-center">
-                <div class="col">
-                    <h5 class="mb-0">Lista de Clientes (@clientes.Count)</h5>
-                </div>
-                <div class="col-auto">
-                    <input type="text" class="form-control" @bind="busqueda" @bind:event="oninput" placeholder="Buscar cliente..." />
-                </div>
-            </div>
+    <!-- Búsqueda -->
+    <div class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl p-6 mb-6 border-2 border-gray-100">
+        <div class="relative">
+            <svg class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input type="text" @bind="busqueda" @bind:event="oninput"
+                   class="w-full pl-12 pr-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 bg-gray-50/50 focus:bg-white"
+                   placeholder="Buscar por nombre, email, documento..." />
         </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Nombre Completo</th>
-                            <th>Email</th>
-                            <th>Teléfono</th>
-                            <th>DNI</th>
-                            <th>Edad</th>
-                            <th>Acciones</th>
+    </div>
+
+    <!-- Tabla de clientes -->
+    <div class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl overflow-hidden border-2 border-gray-100">
+        <div class="px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-900">Lista de Clientes (@clientes.Count)</h3>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50 border-b-2 border-gray-200">
+                    <tr>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Nombre Completo</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Email</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Teléfono</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">DNI</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Edad</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    @foreach (var cliente in ClientesFiltrados)
+                    {
+                        <tr class="hover:bg-blue-50/50 transition-all duration-300">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold shadow-lg">
+                                        @cliente.FirstName.Substring(0, 1)@cliente.LastName.Substring(0, 1)
+                                    </div>
+                                    <div class="ml-4">
+                                        <div class="text-sm font-medium text-gray-900">@cliente.FirstName @cliente.LastName</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">@cliente.Email</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">@cliente.Phone</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">@cliente.DocumentNumber</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">@CalcularEdad(cliente.DateOfBirth)</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center gap-2">
+                                    @if (HasPermission(Permission.ViewClientHistory))
+                                    {
+                                        <button class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-300 transform hover:scale-110" title="Ver detalles">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                            </svg>
+                                        </button>
+                                    }
+                                    @if (HasPermission(Permission.EditClient))
+                                    {
+                                        <button class="p-2 text-yellow-600 hover:bg-yellow-50 rounded-lg transition-all duration-300 transform hover:scale-110" title="Editar">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                            </svg>
+                                        </button>
+                                    }
+                                    @if (HasPermission(Permission.DeleteClient))
+                                    {
+                                        <button class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all duration-300 transform hover:scale-110" title="Eliminar">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                        </button>
+                                    }
+                                </div>
+                            </td>
                         </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var cliente in ClientesFiltrados)
-                        {
-                            <tr>
-                                <td>
-                                    <strong>@cliente.FirstName @cliente.LastName</strong>
-                                </td>
-                                <td>@cliente.Email</td>
-                                <td>@cliente.Phone</td>
-                                <td>@cliente.DocumentNumber</td>
-                                <td>@CalcularEdad(cliente.DateOfBirth)</td>
-                                <td>
-                                    @if (PermissionService.HasPermission(CurrentUser.UserRole, Services.RolePermissionService.Permission.ViewClientHistory))
-                                    {
-                                        <button class="btn btn-sm btn-outline-primary me-1" title="Ver detalles">
-                                            <i class="bi bi-eye"></i>
-                                        </button>
-                                    }
-                                    @if (PermissionService.HasPermission(CurrentUser.UserRole, Services.RolePermissionService.Permission.EditClient))
-                                    {
-                                        <button class="btn btn-sm btn-outline-warning me-1" title="Editar">
-                                            <i class="bi bi-pencil"></i>
-                                        </button>
-                                    }
-                                    @if (PermissionService.HasPermission(CurrentUser.UserRole, Services.RolePermissionService.Permission.DeleteClient))
-                                    {
-                                        <button class="btn btn-sm btn-outline-danger" title="Eliminar">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    }
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
+                    }
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
@@ -140,6 +201,8 @@
 
     protected override void OnInitialized()
     {
+        base.OnInitialized();
+
         // Datos de ejemplo
         clientes = new List<ClienteDto>
         {
