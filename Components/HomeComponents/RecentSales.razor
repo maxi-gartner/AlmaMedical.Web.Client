@@ -1,0 +1,107 @@
+﻿@* Components/Dashboard/RecentSales.razor *@
+
+<div class="rounded-2xl bg-white/70 backdrop-blur-sm p-6 shadow-lg border border-white/20">
+    <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+            </div>
+            <div>
+                <h2 class="text-xl font-bold text-slate-800">Ventas Recientes</h2>
+                <p class="text-sm text-slate-500">Últimas transacciones</p>
+            </div>
+        </div>
+        <a href="/ventas" class="text-sm text-green-600 hover:text-green-700 font-medium">
+            Ver todas →
+        </a>
+    </div>
+
+    <div class="space-y-3">
+        @foreach (var sale in recentSales)
+        {
+            <div class="group p-4 rounded-xl bg-gradient-to-r from-slate-50 to-white border border-slate-200 hover:border-green-300 hover:shadow-md transition-all">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-4 flex-1">
+                        <!-- Icon -->
+                        <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                            </svg>
+                        </div>
+
+                        <!-- Info -->
+                        <div class="flex-1">
+                            <h3 class="font-semibold text-slate-800">@sale.ClientName</h3>
+                            <p class="text-sm text-slate-600">@sale.Product</p>
+                            <p class="text-xs text-slate-400 mt-1">@sale.Time</p>
+                        </div>
+
+                        <!-- Amount -->
+                        <div class="text-right">
+                            <p class="text-lg font-bold text-green-600">$@sale.Amount.ToString("N0")</p>
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium @sale.PaymentMethodClass">
+                                @sale.PaymentMethod
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Empty State -->
+    @if (!recentSales.Any())
+    {
+        <div class="text-center py-12">
+            <svg class="w-16 h-16 mx-auto text-slate-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+            <p class="text-slate-500">No hay ventas registradas hoy</p>
+        </div>
+    }
+</div>
+
+@code {
+    private List<SaleMock> recentSales = new()
+    {
+        new SaleMock
+        {
+            ClientName = "María González",
+            Product = "Botox Facial",
+            Amount = 45000,
+            PaymentMethod = "Efectivo",
+            PaymentMethodClass = "bg-green-100 text-green-700",
+            Time = "16:30"
+        },
+        new SaleMock
+        {
+            ClientName = "Ana Silva",
+            Product = "Relleno Labial + Ácido Hialurónico",
+            Amount = 62000,
+            PaymentMethod = "Tarjeta",
+            PaymentMethodClass = "bg-blue-100 text-blue-700",
+            Time = "14:15"
+        },
+        new SaleMock
+        {
+            ClientName = "Pedro Martínez",
+            Product = "Limpieza Facial Profunda",
+            Amount = 20500,
+            PaymentMethod = "Transferencia",
+            PaymentMethodClass = "bg-purple-100 text-purple-700",
+            Time = "09:45"
+        }
+    };
+
+    private class SaleMock
+    {
+        public string ClientName { get; set; } = string.Empty;
+        public string Product { get; set; } = string.Empty;
+        public decimal Amount { get; set; }
+        public string PaymentMethod { get; set; } = string.Empty;
+        public string PaymentMethodClass { get; set; } = string.Empty;
+        public string Time { get; set; } = string.Empty;
+    }
+}

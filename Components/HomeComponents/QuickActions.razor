@@ -1,0 +1,113 @@
+﻿@* Components/HomeComponents/QuickActions.razor *@
+@using AlmaMedical.Web.Client.Base
+@using AlmaMedical.Web.Client.Services
+@inherits AuthorizedComponentBase
+
+<div class="rounded-2xl bg-white/70 backdrop-blur-sm p-6 shadow-lg border border-white/20">
+    <div class="flex items-center gap-3 mb-4">
+        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-500 to-pink-500 flex items-center justify-center">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+        </div>
+        <h3 class="text-lg font-bold text-slate-800">Acciones Rápidas</h3>
+    </div>
+
+    <div class="space-y-3">
+        <!-- Nuevo Turno -->
+        @if (HasPermission(RolePermissionService.Permission.CreateAppointment))
+        {
+            <button @onclick='() => GoToPage("/turnos")'
+                    class="w-full group relative overflow-hidden rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 p-4 hover:shadow-lg transition-all">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                    </div>
+                    <div class="text-left flex-1">
+                        <p class="font-semibold text-white">Nuevo Turno</p>
+                        <p class="text-xs text-white/80">Agendar cita</p>
+                    </div>
+                    <svg class="w-5 h-5 text-white/60 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                </div>
+            </button>
+        }
+
+        <!-- Nueva Venta -->
+        @if (HasPermission(RolePermissionService.Permission.CreateSale))
+        {
+            <button @onclick='() => GoToPage("/ventas")'
+                    class="w-full group relative overflow-hidden rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 p-4 hover:shadow-lg transition-all">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                    </div>
+                    <div class="text-left flex-1">
+                        <p class="font-semibold text-white">Nueva Venta</p>
+                        <p class="text-xs text-white/80">Registrar venta</p>
+                    </div>
+                    <svg class="w-5 h-5 text-white/60 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                </div>
+            </button>
+        }
+
+        <!-- Nuevo Cliente -->
+        @if (HasPermission(RolePermissionService.Permission.CreateClient))
+        {
+            <button @onclick='() => GoToPage("/clientes")'
+                    class="w-full group relative overflow-hidden rounded-xl bg-gradient-to-r from-purple-500 to-pink-600 p-4 hover:shadow-lg transition-all">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                        </svg>
+                    </div>
+                    <div class="text-left flex-1">
+                        <p class="font-semibold text-white">Nuevo Cliente</p>
+                        <p class="text-xs text-white/80">Agregar cliente</p>
+                    </div>
+                    <svg class="w-5 h-5 text-white/60 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                </div>
+            </button>
+        }
+
+        <!-- Registrar Gasto (solo Professional/Admin) -->
+        @if (HasPermission(RolePermissionService.Permission.CreateExpense))
+        {
+            <button @onclick='() => GoToPage("/gastos")'
+                    class="w-full group relative overflow-hidden rounded-xl bg-gradient-to-r from-red-500 to-orange-600 p-4 hover:shadow-lg transition-all">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                    </div>
+                    <div class="text-left flex-1">
+                        <p class="font-semibold text-white">Registrar Gasto</p>
+                        <p class="text-xs text-white/80">Nuevo gasto</p>
+                    </div>
+                    <svg class="w-5 h-5 text-white/60 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                </div>
+            </button>
+        }
+    </div>
+</div>
+
+@code {
+    private void GoToPage(string url)
+    {
+        // Mock navigation - después conectar con NavigationManager
+        Console.WriteLine($"Navigating to: {url}");
+    }
+}

@@ -1,152 +1,186 @@
 ﻿@page "/ventas"
 @rendermode InteractiveServer
+@inherits AlmaMedical.Web.Client.Base.AuthorizedComponentBase
+@using AlmaMedical.Web.Client.Services
+@using static AlmaMedical.Web.Client.Services.RolePermissionService
 
 <PageTitle>Ventas - ALMA Medical</PageTitle>
 
-<div class="container-fluid">
-    <div class="row mb-4">
-        <div class="col">
-            <h1 class="display-4">Punto de Venta</h1>
-            <p class="text-muted">Registra ventas y genera comprobantes</p>
-        </div>
-        <div class="col-auto">
-            <button class="btn btn-success btn-lg" @onclick="NuevaVenta">
-                <i class="bi bi-plus-circle"></i> Nueva Venta
-            </button>
+<div class="min-h-screen bg-gray-50/50">
+    <!-- Header -->
+    <div class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl p-6 mb-6 border border-gray-100">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+                <h1 class="text-3xl font-bold bg-gradient-to-r from-green-600 to-teal-600 bg-clip-text text-transparent">
+                    Punto de Venta
+                </h1>
+                <p class="text-gray-600 mt-1">Registra ventas y genera comprobantes</p>
+            </div>
+            @if (HasPermission(Permission.CreateSale) && ventaActual == null)
+            {
+                <button @onclick="NuevaVenta"
+                        class="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white px-6 py-3 rounded-xl flex items-center gap-2 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Nueva Venta
+                </button>
+            }
         </div>
     </div>
 
     @if (ventaActual != null)
     {
-        <div class="row">
-            <div class="col-md-7">
-                <div class="card mb-4">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0">Agregar Productos/Servicios</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row g-3 mb-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Cliente (opcional)</label>
-                                <select class="form-select" @bind="ventaActual.ClienteNombre">
-                                    <option value="">Venta sin cliente</option>
-                                    <option value="María González">María González</option>
-                                    <option value="Carlos Pérez">Carlos Pérez</option>
-                                    <option value="Ana Martínez">Ana Martínez</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Tipo de precio</label>
-                                <select class="form-select" @bind="tipoPrecioSeleccionado">
-                                    <option value="Publico">Público</option>
-                                    <option value="Estudiante">Estudiante</option>
-                                    <option value="Profesional">Profesional</option>
-                                </select>
-                            </div>
-                        </div>
+        <!-- Punto de venta activo -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Panel de productos -->
+            <div class="lg:col-span-2">
+                <div class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl p-6 border border-gray-100">
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">Agregar Productos/Servicios</h3>
 
-                        <div class="input-group mb-3">
-                            <input type="text" class="form-control" @bind="busquedaProducto" @bind:event="oninput"
-                                   placeholder="Buscar producto o servicio..." />
-                            <button class="btn btn-outline-secondary" @onclick="BuscarProductos">
-                                <i class="bi bi-search"></i>
-                            </button>
+                    <!-- Selección de cliente y tipo de precio -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Cliente (opcional)</label>
+                            <select @bind="ventaActual.ClienteNombre"
+                                    class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-green-500/20 focus:border-green-500 transition-all duration-300 bg-gray-50/50 focus:bg-white">
+                                <option value="">Venta sin cliente</option>
+                                <option value="María González">María González</option>
+                                <option value="Carlos Pérez">Carlos Pérez</option>
+                                <option value="Ana Martínez">Ana Martínez</option>
+                            </select>
                         </div>
-
-                        @if (!string.IsNullOrWhiteSpace(busquedaProducto) && ProductosFiltrados.Any())
-                        {
-                            <div class="list-group mb-3">
-                                @foreach (var prod in ProductosFiltrados)
-                                {
-                                    <button class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
-                                            @onclick="() => AgregarItemVenta(prod)">
-                                        <div>
-                                            <strong>@prod.Name</strong>
-                                            <small class="text-muted d-block">@prod.Code - @prod.Category</small>
-                                        </div>
-                                        <span class="badge bg-primary rounded-pill">$@ObtenerPrecio(prod).ToString("N2")</span>
-                                    </button>
-                                }
-                            </div>
-                        }
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Tipo de precio</label>
+                            <select @bind="tipoPrecioSeleccionado"
+                                    class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-green-500/20 focus:border-green-500 transition-all duration-300 bg-gray-50/50 focus:bg-white">
+                                <option value="Publico">Público</option>
+                                <option value="Estudiante">Estudiante</option>
+                                <option value="Profesional">Profesional</option>
+                            </select>
+                        </div>
                     </div>
+
+                    <!-- Búsqueda de productos -->
+                    <div class="relative mb-6">
+                        <svg class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        <input type="text" @bind="busquedaProducto" @bind:event="oninput"
+                               class="w-full pl-12 pr-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-green-500/20 focus:border-green-500 transition-all duration-300 bg-gray-50/50 focus:bg-white"
+                               placeholder="Buscar producto o servicio..." />
+                    </div>
+
+                    <!-- Resultados de búsqueda -->
+                    @if (!string.IsNullOrWhiteSpace(busquedaProducto) && ProductosFiltrados.Any())
+                    {
+                        <div class="space-y-2 mb-4">
+                            @foreach (var prod in ProductosFiltrados)
+                            {
+                                <button @onclick="() => AgregarItemVenta(prod)"
+                                        class="w-full p-4 bg-gray-50 hover:bg-green-50 rounded-xl border-2 border-gray-200 hover:border-green-300 transition-all duration-300 flex justify-between items-center group">
+                                    <div class="text-left">
+                                        <p class="font-semibold text-gray-900 group-hover:text-green-700">@prod.Name</p>
+                                        <p class="text-sm text-gray-500">@prod.Code - @prod.Category</p>
+                                    </div>
+                                    <span class="px-4 py-2 bg-green-600 text-white rounded-lg font-bold">
+                                        $@ObtenerPrecio(prod).ToString("N0")
+                                    </span>
+                                </button>
+                            }
+                        </div>
+                    }
                 </div>
             </div>
 
-            <div class="col-md-5">
-                <div class="card">
-                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Ticket de Venta</h5>
-                        <span>#@ventaActual.NumeroVenta</span>
+            <!-- Ticket de venta -->
+            <div class="lg:col-span-1">
+                <div class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-100 sticky top-6">
+                    <div class="bg-gradient-to-r from-green-600 to-teal-600 p-4 rounded-t-2xl">
+                        <div class="flex justify-between items-center text-white">
+                            <h3 class="text-lg font-bold">Ticket de Venta</h3>
+                            <span class="font-mono">#@ventaActual.NumeroVenta</span>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <small class="text-muted">Fecha: @DateTime.Now.ToString("dd/MM/yyyy HH:mm")</small><br />
-                            <small class="text-muted">Cliente: @(string.IsNullOrWhiteSpace(ventaActual.ClienteNombre) ? "Sin cliente" : ventaActual.ClienteNombre)</small>
+
+                    <div class="p-4">
+                        <!-- Info de la venta -->
+                        <div class="text-sm text-gray-600 mb-4 space-y-1">
+                            <div class="flex justify-between">
+                                <span>Fecha:</span>
+                                <span>@DateTime.Now.ToString("dd/MM/yyyy HH:mm")</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Cliente:</span>
+                                <span>@(string.IsNullOrWhiteSpace(ventaActual.ClienteNombre) ? "Sin cliente" : ventaActual.ClienteNombre)</span>
+                            </div>
                         </div>
 
                         @if (ventaActual.Items.Any())
                         {
-                            <div class="table-responsive">
-                                <table class="table table-sm">
-                                    <thead>
-                                        <tr>
-                                            <th>Producto</th>
-                                            <th class="text-center">Cant.</th>
-                                            <th class="text-end">Precio</th>
-                                            <th class="text-end">Total</th>
-                                            <th></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach (var item in ventaActual.Items)
-                                        {
-                                            <tr>
-                                                <td>
-                                                    <small>@item.ProductoNombre</small>
-                                                </td>
-                                                <td class="text-center">
-                                                    <input type="number" class="form-control form-control-sm" style="width: 60px;"
-                                                           @bind="item.Cantidad" @bind:event="oninput" min="1" />
-                                                </td>
-                                                <td class="text-end">
-                                                    <small>$@item.PrecioUnitario.ToString("N2")</small>
-                                                </td>
-                                                <td class="text-end">
-                                                    <strong>$@item.Total.ToString("N2")</strong>
-                                                </td>
-                                                <td>
-                                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => EliminarItem(item)">
-                                                        <i class="bi bi-x"></i>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        }
-                                    </tbody>
-                                </table>
+                            <!-- Items de la venta -->
+                            <div class="space-y-2 mb-4 max-h-64 overflow-y-auto">
+                                @foreach (var item in ventaActual.Items)
+                                {
+                                    <div class="p-3 bg-gray-50 rounded-lg">
+                                        <div class="flex justify-between items-start mb-2">
+                                            <p class="font-medium text-gray-900 text-sm flex-1">@item.ProductoNombre</p>
+                                            <button @onclick="() => EliminarItem(item)"
+                                                    class="text-red-500 hover:text-red-700 ml-2">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                        <div class="flex justify-between items-center">
+                                            <div class="flex items-center gap-2">
+                                                <button @onclick="() => DecrementarCantidad(item)"
+                                                        class="w-6 h-6 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center">
+                                                    <span class="text-xs font-bold">-</span>
+                                                </button>
+                                                <span class="text-sm font-medium w-8 text-center">@item.Cantidad</span>
+                                                <button @onclick="() => IncrementarCantidad(item)"
+                                                        class="w-6 h-6 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center">
+                                                    <span class="text-xs font-bold">+</span>
+                                                </button>
+                                                <span class="text-sm text-gray-500">x $@item.PrecioUnitario.ToString("N0")</span>
+                                            </div>
+                                            <p class="font-bold text-gray-900">$@item.Total.ToString("N0")</p>
+                                        </div>
+                                    </div>
+                                }
                             </div>
 
-                            <hr />
+                            <!-- Totales -->
+                            <div class="border-t border-gray-200 pt-4 space-y-2">
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-600">Subtotal:</span>
+                                    <span class="font-medium">$@ventaActual.Subtotal.ToString("N0")</span>
+                                </div>
 
-                            <div class="d-flex justify-content-between mb-2">
-                                <span>Subtotal:</span>
-                                <strong>$@ventaActual.Subtotal.ToString("N2")</strong>
-                            </div>
-                            <div class="d-flex justify-content-between mb-2">
-                                <span>Descuento:</span>
-                                <div class="input-group input-group-sm" style="width: 120px;">
-                                    <input type="number" class="form-control" @bind="ventaActual.Descuento" min="0" step="0.01" />
-                                    <span class="input-group-text">%</span>
+                                @if (HasPermission(Permission.ApplyDiscounts))
+                                {
+                                    <div class="flex justify-between items-center text-sm">
+                                        <span class="text-gray-600">Descuento:</span>
+                                        <div class="flex items-center gap-2">
+                                            <input type="number" @bind="ventaActual.Descuento" min="0" max="100" step="1"
+                                                   class="w-16 px-2 py-1 border-2 border-gray-300 rounded-lg text-center" />
+                                            <span>%</span>
+                                        </div>
+                                    </div>
+                                }
+
+                                <div class="flex justify-between text-xl font-bold pt-2 border-t border-gray-200">
+                                    <span>TOTAL:</span>
+                                    <span class="text-green-600">$@ventaActual.Total.ToString("N0")</span>
                                 </div>
                             </div>
-                            <div class="d-flex justify-content-between mb-3">
-                                <h4>TOTAL:</h4>
-                                <h4 class="text-success">$@ventaActual.Total.ToString("N2")</h4>
-                            </div>
 
-                            <div class="mb-3">
-                                <label class="form-label">Método de pago</label>
-                                <select class="form-select" @bind="ventaActual.MetodoPago">
+                            <!-- Método de pago -->
+                            <div class="mt-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Método de pago</label>
+                                <select @bind="ventaActual.MetodoPago"
+                                        class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-green-500/20 focus:border-green-500 transition-all duration-300 bg-gray-50/50 focus:bg-white">
                                     <option value="Efectivo">Efectivo</option>
                                     <option value="Tarjeta">Tarjeta</option>
                                     <option value="Transferencia">Transferencia</option>
@@ -154,20 +188,25 @@
                                 </select>
                             </div>
 
-                            <div class="d-grid gap-2">
-                                <button class="btn btn-success btn-lg" @onclick="FinalizarVenta">
-                                    <i class="bi bi-check-circle"></i> Finalizar Venta
+                            <!-- Acciones -->
+                            <div class="grid grid-cols-2 gap-3 mt-6">
+                                <button @onclick="CancelarVenta"
+                                        class="px-4 py-3 border-2 border-red-500 text-red-600 rounded-xl hover:bg-red-50 transition-all duration-300 font-medium">
+                                    Cancelar
                                 </button>
-                                <button class="btn btn-outline-danger" @onclick="CancelarVenta">
-                                    <i class="bi bi-x-circle"></i> Cancelar
+                                <button @onclick="FinalizarVenta"
+                                        class="px-4 py-3 bg-gradient-to-r from-green-600 to-teal-600 text-white rounded-xl hover:from-green-700 hover:to-teal-700 transition-all duration-300 font-medium">
+                                    Finalizar
                                 </button>
                             </div>
                         }
                         else
                         {
-                            <div class="text-center text-muted py-5">
-                                <i class="bi bi-cart-x" style="font-size: 3rem;"></i>
-                                <p class="mt-2">Agregá productos para comenzar</p>
+                            <div class="text-center py-12">
+                                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                </svg>
+                                <p class="mt-2 text-sm text-gray-500">Agregá productos para comenzar</p>
                             </div>
                         }
                     </div>
@@ -177,69 +216,95 @@
     }
     else
     {
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Historial de Ventas (@ventas.Count)</h5>
+        <!-- Estadísticas del día -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div class="bg-gradient-to-br from-green-500 to-teal-600 rounded-2xl p-6 text-white shadow-xl">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-green-100 text-sm">Total Vendido Hoy</p>
+                        <p class="text-3xl font-bold mt-2">$@ventas.Sum(v => v.Total).ToString("N0")</p>
+                    </div>
+                    <svg class="w-12 h-12 text-green-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
             </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>#</th>
-                                <th>Fecha</th>
-                                <th>Cliente</th>
-                                <th>Items</th>
-                                <th>Total</th>
-                                <th>Método Pago</th>
-                                <th>Estado</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var venta in ventas.OrderByDescending(v => v.Fecha))
-                            {
-                                <tr>
-                                    <td><strong>@venta.NumeroVenta</strong></td>
-                                    <td>@venta.Fecha.ToString("dd/MM/yyyy HH:mm")</td>
-                                    <td>@(string.IsNullOrWhiteSpace(venta.ClienteNombre) ? "-" : venta.ClienteNombre)</td>
-                                    <td>@venta.Items.Count items</td>
-                                    <td><strong>$@venta.Total.ToString("N2")</strong></td>
-                                    <td>@venta.MetodoPago</td>
-                                    <td>
-                                        <span class="badge bg-success">Pagado</span>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
+
+            <div class="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-6 text-white shadow-xl">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-blue-100 text-sm">Ventas Realizadas</p>
+                        <p class="text-3xl font-bold mt-2">@ventas.Count</p>
+                    </div>
+                    <svg class="w-12 h-12 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                </div>
+            </div>
+
+            <div class="bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl p-6 text-white shadow-xl">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-purple-100 text-sm">Ticket Promedio</p>
+                        <p class="text-3xl font-bold mt-2">$@(ventas.Any() ? ventas.Average(v => v.Total).ToString("N0") : "0")</p>
+                    </div>
+                    <svg class="w-12 h-12 text-purple-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
                 </div>
             </div>
         </div>
 
-        <div class="row mt-4">
-            <div class="col-md-4">
-                <div class="card text-center">
-                    <div class="card-body">
-                        <h3 class="text-success">$@ventas.Sum(v => v.Total).ToString("N2")</h3>
-                        <p class="mb-0">Total Vendido Hoy</p>
-                    </div>
-                </div>
+        <!-- Historial de ventas -->
+        <div class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl overflow-hidden border border-gray-100">
+            <div class="px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">Historial de Ventas</h3>
             </div>
-            <div class="col-md-4">
-                <div class="card text-center">
-                    <div class="card-body">
-                        <h3 class="text-primary">@ventas.Count</h3>
-                        <p class="mb-0">Ventas Realizadas</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card text-center">
-                    <div class="card-body">
-                        <h3 class="text-info">$@(ventas.Any() ? ventas.Average(v => v.Total).ToString("N2") : "0.00")</h3>
-                        <p class="mb-0">Ticket Promedio</p>
-                    </div>
-                </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50 border-b-2 border-gray-200">
+                        <tr>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">#</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Fecha</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Cliente</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Items</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Total</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Método</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        @foreach (var venta in ventas.OrderByDescending(v => v.Fecha))
+                        {
+                            <tr class="hover:bg-gray-50 transition-all duration-300">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="font-mono text-sm font-medium text-gray-900">@venta.NumeroVenta</span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                    @venta.Fecha.ToString("dd/MM HH:mm")
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                    @(string.IsNullOrWhiteSpace(venta.ClienteNombre) ? "-" : venta.ClienteNombre)
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                    @venta.Items.Count items
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="text-lg font-bold text-green-600">$@venta.Total.ToString("N0")</span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                    @venta.MetodoPago
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">
+                                        Pagado
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
             </div>
         </div>
     }
@@ -263,6 +328,8 @@
 
     protected override void OnInitialized()
     {
+        base.OnInitialized();
+
         ventas = new List<VentaDto>
         {
             new VentaDto
@@ -337,15 +404,20 @@
         busquedaProducto = "";
     }
 
+    private void IncrementarCantidad(VentaItemDto item)
+    {
+        item.Cantidad++;
+    }
+
+    private void DecrementarCantidad(VentaItemDto item)
+    {
+        if (item.Cantidad > 1)
+            item.Cantidad--;
+    }
+
     private void EliminarItem(VentaItemDto item)
     {
         ventaActual?.Items.Remove(item);
-    }
-
-    private void BuscarProductos()
-    {
-        // Fuerza actualización de la búsqueda
-        StateHasChanged();
     }
 
     private void FinalizarVenta()

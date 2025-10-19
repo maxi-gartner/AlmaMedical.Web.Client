@@ -1,0 +1,136 @@
+﻿@* Components/Dashboard/WeeklyChart.razor *@
+
+<div class="rounded-2xl bg-white/70 backdrop-blur-sm p-6 shadow-lg border border-white/20">
+    <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+            </div>
+            <div>
+                <h2 class="text-xl font-bold text-slate-800">Ventas Semanales</h2>
+                <p class="text-sm text-slate-500">Última semana</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2">
+                <div class="w-3 h-3 rounded-full bg-gradient-to-br from-green-500 to-emerald-600"></div>
+                <span class="text-xs text-slate-600">Ventas</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="w-3 h-3 rounded-full bg-gradient-to-br from-red-500 to-orange-600"></div>
+                <span class="text-xs text-slate-600">Gastos</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart Area -->
+    <div class="relative h-64">
+        <div class="absolute inset-0 flex items-end justify-between gap-2 px-2">
+            @foreach (var day in weekData)
+            {
+                <div class="flex-1 flex flex-col items-center gap-2">
+                    <!-- Sales Bar -->
+                    <div class="w-full flex flex-col items-center gap-1">
+                        <div class="relative w-full group cursor-pointer">
+                            <div class="w-full rounded-t-lg bg-gradient-to-t from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 transition-all"
+                                 style="height: @(day.SalesHeight)px">
+                            </div>
+                            <!-- Tooltip -->
+                            <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                                Ventas: $@day.Sales.ToString("N0")
+                                <div class="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-800"></div>
+                            </div>
+                        </div>
+
+                        <!-- Expenses Bar (negative) -->
+                        <div class="relative w-full group cursor-pointer">
+                            <div class="w-full rounded-b-lg bg-gradient-to-b from-red-500 to-orange-600 hover:from-red-600 hover:to-orange-700 transition-all"
+                                 style="height: @(day.ExpensesHeight)px">
+                            </div>
+                            <!-- Tooltip -->
+                            <div class="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-3 py-2 bg-slate-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                                Gastos: $@day.Expenses.ToString("N0")
+                                <div class="absolute bottom-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-slate-800"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Day Label -->
+                    <span class="text-xs font-medium text-slate-600 mt-2">@day.Day</span>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Summary -->
+    <div class="mt-6 pt-6 border-t border-slate-200">
+        <div class="grid grid-cols-3 gap-4">
+            <div class="text-center">
+                <p class="text-sm text-slate-600 mb-1">Total Ventas</p>
+                <p class="text-xl font-bold text-green-600">$@totalSales.ToString("N0")</p>
+            </div>
+            <div class="text-center">
+                <p class="text-sm text-slate-600 mb-1">Total Gastos</p>
+                <p class="text-xl font-bold text-red-600">$@totalExpenses.ToString("N0")</p>
+            </div>
+            <div class="text-center">
+                <p class="text-sm text-slate-600 mb-1">Ganancia Neta</p>
+                <p class="text-xl font-bold text-blue-600">$@netProfit.ToString("N0")</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<DayData> weekData = new();
+    private decimal totalSales = 0;
+    private decimal totalExpenses = 0;
+    private decimal netProfit = 0;
+
+    protected override void OnInitialized()
+    {
+        // Mock data
+        var rawData = new List<(string Day, decimal Sales, decimal Expenses)>
+        {
+            ("Lun", 85000, 15000),
+            ("Mar", 120000, 25000),
+            ("Mié", 95000, 18000),
+            ("Jue", 142000, 32000),
+            ("Vie", 165000, 28000),
+            ("Sáb", 98000, 12000),
+            ("Dom", 45000, 8000)
+        };
+
+        // Calculate totals
+        totalSales = rawData.Sum(d => d.Sales);
+        totalExpenses = rawData.Sum(d => d.Expenses);
+        netProfit = totalSales - totalExpenses;
+
+        // Find max value for scaling
+        var maxSales = rawData.Max(d => d.Sales);
+        var maxExpenses = rawData.Max(d => d.Expenses);
+        var maxValue = Math.Max(maxSales, maxExpenses);
+
+        // Scale heights (max 100px for the tallest bar)
+        const int maxHeight = 100;
+        weekData = rawData.Select(d => new DayData
+        {
+            Day = d.Day,
+            Sales = d.Sales,
+            Expenses = d.Expenses,
+            SalesHeight = (int)(d.Sales / maxValue * maxHeight),
+            ExpensesHeight = (int)(d.Expenses / maxValue * maxHeight)
+        }).ToList();
+    }
+
+    private class DayData
+    {
+        public string Day { get; set; } = string.Empty;
+        public decimal Sales { get; set; }
+        public decimal Expenses { get; set; }
+        public int SalesHeight { get; set; }
+        public int ExpensesHeight { get; set; }
+    }
+}

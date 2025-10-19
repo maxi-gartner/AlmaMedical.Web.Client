@@ -1,0 +1,146 @@
+﻿@* Components/Dashboard/TodayAppointmentsList.razor *@
+
+<div class="rounded-2xl bg-white/70 backdrop-blur-sm p-6 shadow-lg border border-white/20">
+    <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+            </div>
+            <div>
+                <h2 class="text-xl font-bold text-slate-800">Turnos de Hoy</h2>
+                <p class="text-sm text-slate-500">Lunes 21 de Octubre</p>
+            </div>
+        </div>
+        <a href="/turnos" class="text-sm text-purple-600 hover:text-purple-700 font-medium">
+            Ver todos →
+        </a>
+    </div>
+
+    <div class="space-y-3">
+        @foreach (var appointment in mockAppointments)
+        {
+            <div class="group relative overflow-hidden rounded-xl bg-gradient-to-r @appointment.GradientClass p-4 hover:shadow-md transition-all">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-4 flex-1">
+                        <!-- Time -->
+                        <div class="flex flex-col items-center justify-center w-16 h-16 rounded-lg bg-white/20 backdrop-blur-sm">
+                            <span class="text-lg font-bold text-white">@appointment.Time</span>
+                            <span class="text-xs text-white/80">@appointment.Duration</span>
+                        </div>
+
+                        <!-- Info -->
+                        <div class="flex-1">
+                            <h3 class="font-semibold text-white text-lg">@appointment.ClientName</h3>
+                            <p class="text-white/80 text-sm">@appointment.Service</p>
+                        </div>
+
+                        <!-- Status Badge -->
+                        <div class="px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm">
+                            <span class="text-white text-sm font-medium flex items-center gap-1">
+                                @if (appointment.Status == "Completado")
+                                {
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                }
+                                else if (appointment.Status == "En curso")
+                                {
+                                    <svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                    </svg>
+                                }
+                                else if (appointment.Status == "Cancelado")
+                                {
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                }
+                                else
+                                {
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                }
+                                @appointment.Status
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Empty State -->
+    @if (!mockAppointments.Any())
+    {
+        <div class="text-center py-12">
+            <svg class="w-16 h-16 mx-auto text-slate-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <p class="text-slate-500">No hay turnos programados para hoy</p>
+        </div>
+    }
+</div>
+
+@code {
+    private List<AppointmentMock> mockAppointments = new()
+    {
+        new AppointmentMock
+        {
+            Time = "09:00",
+            Duration = "1h",
+            ClientName = "Pedro Martínez",
+            Service = "Limpieza Facial",
+            Status = "Completado",
+            GradientClass = "from-green-500 to-emerald-600"
+        },
+        new AppointmentMock
+        {
+            Time = "10:30",
+            Duration = "45m",
+            ClientName = "Ana Silva",
+            Service = "Relleno Labial",
+            Status = "En curso",
+            GradientClass = "from-blue-500 to-cyan-600"
+        },
+        new AppointmentMock
+        {
+            Time = "12:00",
+            Duration = "30m",
+            ClientName = "Carlos Rodríguez",
+            Service = "Botox",
+            Status = "Pendiente",
+            GradientClass = "from-purple-500 to-pink-600"
+        },
+        new AppointmentMock
+        {
+            Time = "15:00",
+            Duration = "1h",
+            ClientName = "Laura Fernández",
+            Service = "Tratamiento Facial",
+            Status = "Pendiente",
+            GradientClass = "from-purple-500 to-pink-600"
+        },
+        new AppointmentMock
+        {
+            Time = "17:00",
+            Duration = "30m",
+            ClientName = "María González",
+            Service = "Botox Facial",
+            Status = "Pendiente",
+            GradientClass = "from-purple-500 to-pink-600"
+        }
+    };
+
+    private class AppointmentMock
+    {
+        public string Time { get; set; } = string.Empty;
+        public string Duration { get; set; } = string.Empty;
+        public string ClientName { get; set; } = string.Empty;
+        public string Service { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public string GradientClass { get; set; } = string.Empty;
+    }
+}
