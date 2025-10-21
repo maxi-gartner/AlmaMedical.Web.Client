@@ -1,8 +1,9 @@
 ﻿@page "/"
+@rendermode InteractiveServer
 @using AlmaMedical.Web.Client.Components.HomeComponents
 @using AlmaMedical.Web.Client.Services
 @using AlmaMedical.Web.Client.Base
-@inject NavigationManager Navigation
+@using static AlmaMedical.Web.Client.Services.RolePermissionService
 @inherits AuthorizedComponentBase
 
 <PageTitle>Home - AlmaMedical</PageTitle>
@@ -14,19 +15,6 @@
             <p class="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 Bienvenido, @GetCurrentUserName()
             </p>
-        </div>
-
-        <!-- Selector de Rol (solo para testing) -->
-        <div class="rounded-xl bg-white/70 backdrop-blur-sm shadow-lg border border-white/20 p-4">
-            <label class="text-sm font-medium text-slate-700 mb-2 block">🧪 Testing - Cambiar Rol:</label>
-            <select @onchange="CambiarRol"
-                    value="@CurrentUser.UserRole"
-                    class="px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-500">
-                <option value="TenantAdmin">Dueño (Admin)</option>
-                <option value="Professional">Profesional</option>
-                <option value="Receptionist">Recepcionista</option>
-            </select>
-            <p class="text-xs text-slate-500 mt-2">Rol actual: <strong>@CurrentUser.UserRole</strong></p>
         </div>
     </div>
 
@@ -74,18 +62,24 @@
 </div>
 
 @code {
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        CurrentUser.OnRoleChanged += OnRoleChangedHandler;
+    }
+
+    private void OnRoleChangedHandler()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
     private string GetCurrentUserName()
     {
         return CurrentUser?.FullName ?? "Usuario";
     }
 
-    private void CambiarRol(ChangeEventArgs e)
+    public new void Dispose()
     {
-        if (e.Value != null)
-        {
-            CurrentUser.SetRole(e.Value.ToString()!);
-            // Forzar recarga completa de la página
-            Navigation.NavigateTo(Navigation.Uri, forceLoad: true);
-        }
+        CurrentUser.OnRoleChanged -= OnRoleChangedHandler;
     }
 }

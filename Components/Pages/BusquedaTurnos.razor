@@ -382,7 +382,15 @@
         public bool SoloMananas { get; set; }
         public bool SoloTardes { get; set; }
         public bool ExcluirFinDeSemana { get; set; }
+
+        // 🔹 Agregá este método
+        public void SetHoraPreferida(string? hora)
+        {
+            if (!string.IsNullOrWhiteSpace(hora))
+                HoraPreferidaString = hora;
+        }
     }
+
 
     private class ResultadoDisponibilidad
     {
