@@ -1,0 +1,403 @@
+﻿@page "/turnos/buscar"
+@rendermode InteractiveServer
+@using AlmaMedical.Web.Client.Base
+@using AlmaMedical.Web.Client.Services
+@using static AlmaMedical.Web.Client.Services.RolePermissionService
+@inherits AuthorizedComponentBase
+
+<PageTitle>Buscar Turnos - AlmaMedical</PageTitle>
+
+<div class="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50 to-purple-50 p-4 md:p-6 lg:p-8">
+    <!-- Header -->
+    <div class="mb-6">
+        <h1 class="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+            Buscar Disponibilidad
+        </h1>
+        <p class="text-slate-600 mt-1">Encuentra rápidamente los turnos disponibles según tus criterios</p>
+    </div>
+
+    <!-- Formulario de Búsqueda -->
+    <div class="rounded-2xl bg-white/70 backdrop-blur-sm p-6 shadow-xl border border-white/20 mb-6">
+        <h2 class="text-xl font-bold text-slate-800 mb-6">Criterios de Búsqueda</h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <!-- Servicio -->
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-2">
+                    Servicio
+                </label>
+                <select @bind="busqueda.ServicioId"
+                        class="w-full px-4 py-3 border-2 border-slate-300 rounded-xl focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-white">
+                    <option value="">Cualquier servicio</option>
+                    @foreach (var servicio in serviciosDisponibles)
+                    {
+                        <option value="@servicio.Id">@servicio.Nombre (@servicio.Duracion min)</option>
+                    }
+                </select>
+            </div>
+
+            <!-- Hora Preferida -->
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-2">
+                    Hora Preferida
+                </label>
+                <input type="time"
+                       value="@busqueda.HoraPreferidaString"
+                       @onchange="e => busqueda.SetHoraPreferida(e.Value?.ToString())"
+                       class="w-full px-4 py-3 border-2 border-slate-300 rounded-xl focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-white" />
+            </div>
+
+            <!-- Rango de Fechas -->
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-2">
+                    Desde
+                </label>
+                <input type="date"
+                       @bind="busqueda.FechaDesde"
+                       min="@DateTime.Today.ToString("yyyy-MM-dd")"
+                       class="w-full px-4 py-3 border-2 border-slate-300 rounded-xl focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-white" />
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-2">
+                    Hasta
+                </label>
+                <input type="date"
+                       @bind="busqueda.FechaHasta"
+                       min="@DateTime.Today.ToString("yyyy-MM-dd")"
+                       class="w-full px-4 py-3 border-2 border-slate-300 rounded-xl focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-white" />
+            </div>
+        </div>
+
+        <!-- Filtros Adicionales -->
+        <div class="mt-6 flex flex-wrap gap-4">
+            <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox"
+                       @bind="busqueda.SoloMananas"
+                       class="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+                <span class="text-sm text-slate-700">Solo mañanas (antes de 12:00)</span>
+            </label>
+
+            <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox"
+                       @bind="busqueda.SoloTardes"
+                       class="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+                <span class="text-sm text-slate-700">Solo tardes (después de 12:00)</span>
+            </label>
+
+            <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox"
+                       @bind="busqueda.ExcluirFinDeSemana"
+                       class="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+                <span class="text-sm text-slate-700">Excluir fines de semana</span>
+            </label>
+        </div>
+
+        <!-- Botones -->
+        <div class="flex gap-3 mt-6 pt-6 border-t border-slate-200">
+            <button @onclick="BuscarDisponibilidad"
+                    class="px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all transform hover:scale-105 shadow-lg font-medium flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                Buscar Disponibilidad
+            </button>
+
+            <button @onclick="LimpiarBusqueda"
+                    class="px-6 py-3 border-2 border-slate-300 rounded-xl hover:bg-slate-50 transition-all text-slate-700 font-medium">
+                Limpiar
+            </button>
+        </div>
+    </div>
+
+    <!-- Resultados -->
+    @if (buscando)
+    {
+        <div class="rounded-2xl bg-white/70 backdrop-blur-sm p-12 shadow-xl border border-white/20 text-center">
+            <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-indigo-600 border-t-transparent"></div>
+            <p class="text-slate-600 mt-4">Buscando disponibilidad...</p>
+        </div>
+    }
+    else if (resultados.Any())
+    {
+        <!-- Sugerencia Automática -->
+        @if (sugerenciaAutomatica != null)
+        {
+            <div class="rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 p-6 shadow-xl mb-6 text-white">
+                <div class="flex items-start justify-between">
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold mb-1">Sugerencia Automática</h3>
+                            <p class="text-white/90">Próximo turno disponible más cercano a tu búsqueda:</p>
+                            <div class="mt-3 flex items-center gap-4 text-lg">
+                                <span class="font-bold">@sugerenciaAutomatica.DiaNombre, @sugerenciaAutomatica.Fecha.ToString("dd/MM/yyyy")</span>
+                                <span class="text-white/80">•</span>
+                                <span class="font-bold">@sugerenciaAutomatica.Hora</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button @onclick="() => SeleccionarTurno(sugerenciaAutomatica)"
+                            class="px-6 py-3 bg-white text-indigo-600 rounded-xl hover:bg-indigo-50 transition-all font-medium">
+                        Reservar Este
+                    </button>
+                </div>
+            </div>
+        }
+
+        <!-- Lista de Resultados -->
+        <div class="rounded-2xl bg-white/70 backdrop-blur-sm p-6 shadow-xl border border-white/20">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-xl font-bold text-slate-800">
+                    Resultados de Búsqueda
+                    <span class="text-indigo-600">(@resultados.Count turnos disponibles)</span>
+                </h2>
+
+                <select @bind="ordenResultados"
+                        class="px-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    <option value="fecha">Ordenar por fecha</option>
+                    <option value="hora">Ordenar por hora</option>
+                </select>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                @foreach (var resultado in ResultadosOrdenados)
+                {
+                    <div class="group relative overflow-hidden rounded-xl bg-gradient-to-br from-white to-slate-50 p-5 border-2 @(resultado.EsSugerencia ? "border-indigo-500" : "border-slate-200") hover:border-indigo-400 hover:shadow-lg transition-all cursor-pointer"
+                         @onclick="() => SeleccionarTurno(resultado)">
+
+                        @if (resultado.EsSugerencia)
+                        {
+                            <div class="absolute top-2 right-2 px-2 py-1 bg-indigo-500 text-white text-xs font-bold rounded-full">
+                                RECOMENDADO
+                            </div>
+                        }
+
+                        <!-- Fecha -->
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex flex-col items-center justify-center text-white shadow-lg">
+                                <span class="text-xs font-medium">@resultado.DiaNombre.ToUpper()</span>
+                                <span class="text-2xl font-bold">@resultado.Fecha.Day</span>
+                            </div>
+                            <div>
+                                <p class="text-sm text-slate-600">@resultado.Fecha.ToString("MMMM yyyy")</p>
+                                <p class="text-lg font-bold text-slate-800">@resultado.Hora</p>
+                            </div>
+                        </div>
+
+                        <!-- Detalles -->
+                        <div class="space-y-2 mb-4">
+                            <div class="flex items-center gap-2 text-sm text-slate-600">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span>Duración: @resultado.Duracion min</span>
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(resultado.Servicio))
+                            {
+                                <div class="flex items-center gap-2 text-sm text-slate-600">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    <span>@resultado.Servicio</span>
+                                </div>
+                            }
+                        </div>
+
+                        <!-- Botón -->
+                        <button class="w-full px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all font-medium group-hover:shadow-lg">
+                            Seleccionar
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+    else if (busquedaRealizada && !resultados.Any())
+    {
+        <!-- Sin Resultados -->
+        <div class="rounded-2xl bg-white/70 backdrop-blur-sm p-12 shadow-xl border border-white/20 text-center">
+            <svg class="w-16 h-16 mx-auto text-slate-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <h3 class="text-xl font-semibold text-slate-700 mb-2">No se encontraron turnos disponibles</h3>
+            <p class="text-slate-500 mb-6">Intenta modificar los criterios de búsqueda o ampliar el rango de fechas.</p>
+            <button @onclick="LimpiarBusqueda"
+                    class="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all font-medium">
+                Nueva Búsqueda
+            </button>
+        </div>
+    }
+</div>
+
+@code {
+    private BusquedaCriteria busqueda = new();
+    private List<ResultadoDisponibilidad> resultados = new();
+    private ResultadoDisponibilidad? sugerenciaAutomatica;
+    private bool buscando = false;
+    private bool busquedaRealizada = false;
+    private string ordenResultados = "fecha";
+
+    private List<ServicioDto> serviciosDisponibles = new();
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        // Inicializar fechas default
+        busqueda.FechaDesde = DateTime.Today;
+        busqueda.FechaHasta = DateTime.Today.AddDays(14);
+
+        // Cargar servicios disponibles
+        CargarServicios();
+    }
+
+    private void CargarServicios()
+    {
+        // TODO Backend: GET /api/servicios
+        serviciosDisponibles = new List<ServicioDto>
+        {
+            new ServicioDto { Id = "1", Nombre = "Botox Facial", Duracion = 30 },
+            new ServicioDto { Id = "2", Nombre = "Relleno Labial", Duracion = 45 },
+            new ServicioDto { Id = "3", Nombre = "Limpieza Facial", Duracion = 60 },
+            new ServicioDto { Id = "4", Nombre = "Tratamiento Antiedad", Duracion = 90 }
+        };
+    }
+
+    private async Task BuscarDisponibilidad()
+    {
+        buscando = true;
+        resultados.Clear();
+        sugerenciaAutomatica = null;
+        StateHasChanged();
+
+        await Task.Delay(1000); // Simular llamada a API
+
+        // TODO Backend: POST /api/turnos/buscar-disponibilidad
+        // Body: busqueda
+        // Response: List<DisponibilidadDto>
+
+        // Mock de resultados
+        GenerarResultadosMock();
+
+        buscando = false;
+        busquedaRealizada = true;
+        StateHasChanged();
+    }
+
+    private void GenerarResultadosMock()
+    {
+        var random = new Random();
+        var fechaActual = busqueda.FechaDesde;
+
+        while (fechaActual <= busqueda.FechaHasta)
+        {
+            // Saltar fines de semana si está marcado
+            if (busqueda.ExcluirFinDeSemana && (fechaActual.DayOfWeek == DayOfWeek.Saturday || fechaActual.DayOfWeek == DayOfWeek.Sunday))
+            {
+                fechaActual = fechaActual.AddDays(1);
+                continue;
+            }
+
+            // Generar algunos slots disponibles
+            var horasDisponibles = new[] { "09:00", "10:00", "11:00", "14:00", "15:00", "16:00", "17:00", "18:00" };
+
+            foreach (var hora in horasDisponibles)
+            {
+                // Filtrar por mañana/tarde
+                var horaInt = int.Parse(hora.Split(':')[0]);
+                if (busqueda.SoloMananas && horaInt >= 12) continue;
+                if (busqueda.SoloTardes && horaInt < 12) continue;
+
+                // Filtrar por hora preferida (±2 horas)
+                if (!string.IsNullOrEmpty(busqueda.HoraPreferidaString))
+                {
+                    var horaPreferidaInt = int.Parse(busqueda.HoraPreferidaString.Split(':')[0]);
+                    if (Math.Abs(horaInt - horaPreferidaInt) > 2) continue;
+                }
+
+                // Simular que algunos slots están ocupados
+                if (random.Next(100) < 60) // 60% disponible
+                {
+                    var servicio = serviciosDisponibles.FirstOrDefault(s => s.Id == busqueda.ServicioId);
+
+                    resultados.Add(new ResultadoDisponibilidad
+                    {
+                        Fecha = fechaActual,
+                        DiaNombre = fechaActual.ToString("dddd"),
+                        Hora = hora,
+                        Duracion = servicio?.Duracion ?? 60,
+                        Servicio = servicio?.Nombre ?? "",
+                        EsSugerencia = false
+                    });
+                }
+            }
+
+            fechaActual = fechaActual.AddDays(1);
+        }
+
+        // Marcar la primera como sugerencia si hay resultados
+        if (resultados.Any())
+        {
+            sugerenciaAutomatica = resultados.First();
+            sugerenciaAutomatica.EsSugerencia = true;
+        }
+    }
+
+    private IEnumerable<ResultadoDisponibilidad> ResultadosOrdenados =>
+        ordenResultados == "fecha"
+            ? resultados.OrderBy(r => r.Fecha).ThenBy(r => r.Hora)
+            : resultados.OrderBy(r => r.Hora).ThenBy(r => r.Fecha);
+
+    private void LimpiarBusqueda()
+    {
+        busqueda = new BusquedaCriteria
+        {
+            FechaDesde = DateTime.Today,
+            FechaHasta = DateTime.Today.AddDays(14)
+        };
+        resultados.Clear();
+        sugerenciaAutomatica = null;
+        busquedaRealizada = false;
+    }
+
+    private void SeleccionarTurno(ResultadoDisponibilidad resultado)
+    {
+        // TODO: Abrir modal para confirmar y crear el turno
+        // Navegar a página de creación de turno con datos pre-llenados
+        Console.WriteLine($"Seleccionado: {resultado.Fecha.ToShortDateString()} a las {resultado.Hora}");
+    }
+
+    private class BusquedaCriteria
+    {
+        public string ServicioId { get; set; } = "";
+        public string HoraPreferidaString { get; set; } = "";
+        public DateTime FechaDesde { get; set; }
+        public DateTime FechaHasta { get; set; }
+        public bool SoloMananas { get; set; }
+        public bool SoloTardes { get; set; }
+        public bool ExcluirFinDeSemana { get; set; }
+    }
+
+    private class ResultadoDisponibilidad
+    {
+        public DateTime Fecha { get; set; }
+        public string DiaNombre { get; set; } = "";
+        public string Hora { get; set; } = "";
+        public int Duracion { get; set; }
+        public string Servicio { get; set; } = "";
+        public bool EsSugerencia { get; set; }
+    }
+
+    private class ServicioDto
+    {
+        public string Id { get; set; } = "";
+        public string Nombre { get; set; } = "";
+        public int Duracion { get; set; }
+    }
+}

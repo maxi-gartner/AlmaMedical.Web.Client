@@ -1,0 +1,327 @@
+﻿@page "/turnos/calendario"
+@rendermode InteractiveServer
+@using AlmaMedical.Web.Client.Base
+@using AlmaMedical.Web.Client.Services
+@using static AlmaMedical.Web.Client.Services.RolePermissionService
+@inherits AuthorizedComponentBase
+
+<PageTitle>Calendario de Turnos - AlmaMedical</PageTitle>
+
+<div class="min-h-screen bg-gradient-to-br from-slate-50 via-cyan-50 to-blue-50 p-4 md:p-6 lg:p-8">
+    <!-- Header -->
+    <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+            <h1 class="text-3xl font-bold bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent">
+                Calendario de Turnos
+            </h1>
+            <p class="text-slate-600 mt-1">Semana del @semanaActual.ToString("dd/MM") al @semanaActual.AddDays(6).ToString("dd/MM/yyyy")</p>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <!-- Navegación de semana -->
+            <button @onclick="SemanaAnterior"
+                    class="p-3 bg-white rounded-xl hover:bg-slate-50 shadow-lg border border-slate-200 transition-all">
+                <svg class="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+            </button>
+
+            <button @onclick="IrHoy"
+                    class="px-4 py-3 bg-white rounded-xl hover:bg-slate-50 shadow-lg border border-slate-200 transition-all font-medium text-slate-700">
+                Hoy
+            </button>
+
+            <button @onclick="SemanaSiguiente"
+                    class="p-3 bg-white rounded-xl hover:bg-slate-50 shadow-lg border border-slate-200 transition-all">
+                <svg class="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+            </button>
+
+            @if (HasPermission(Permission.CreateAppointment))
+            {
+                <button @onclick="AbrirModalNuevoTurno"
+                        class="px-6 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-xl hover:from-cyan-700 hover:to-blue-700 transition-all shadow-lg font-medium flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Nuevo Turno
+                </button>
+            }
+        </div>
+    </div>
+
+    <!-- Calendario Semanal -->
+    <div class="rounded-2xl bg-white/70 backdrop-blur-sm shadow-xl border border-white/20 overflow-hidden">
+        <!-- Header de días -->
+        <div class="grid grid-cols-8 border-b-2 border-slate-200 bg-gradient-to-r from-slate-50 to-white">
+            <div class="p-4 border-r border-slate-200">
+                <span class="text-sm font-semibold text-slate-600">Hora</span>
+            </div>
+            @foreach (var dia in diasSemana)
+            {
+                <div class="p-4 text-center @(dia.EsHoy ? "bg-cyan-50" : "")">
+                    <div class="text-sm font-semibold text-slate-700">@dia.NombreDia</div>
+                    <div class="text-2xl font-bold @(dia.EsHoy ? "text-cyan-600" : "text-slate-800")">@dia.Numero</div>
+                </div>
+            }
+        </div>
+
+        <!-- Grid de horarios -->
+        <div class="overflow-y-auto max-h-[600px]">
+            @foreach (var hora in horasDelDia)
+            {
+                <div class="grid grid-cols-8 border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
+                    <!-- Columna de hora -->
+                    <div class="p-4 border-r border-slate-200 text-sm font-medium text-slate-600">
+                        @hora
+                    </div>
+
+                    <!-- Columnas de días -->
+                    @foreach (var dia in diasSemana)
+                    {
+                        var turno = ObtenerTurno(dia.Fecha, hora);
+                        <div class="p-2 border-r border-slate-100 min-h-[80px] relative group cursor-pointer hover:bg-blue-50/50 transition-colors"
+                             @onclick="() => ClickEnSlot(dia.Fecha, hora)">
+                            @if (turno != null)
+                            {
+                                <!-- Turno existente -->
+                                <div class="h-full rounded-lg p-2 shadow-md @turno.ColorClass border-l-4 @turno.BorderClass">
+                                    <div class="flex items-start justify-between">
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-sm font-semibold text-slate-800 truncate">@turno.ClienteNombre</p>
+                                            <p class="text-xs text-slate-600 truncate">@turno.Servicio</p>
+                                            <p class="text-xs text-slate-500">@turno.Duracion min</p>
+                                        </div>
+                                        <span class="ml-2 px-1.5 py-0.5 rounded text-xs font-medium @turno.StatusClass">
+                                            @turno.StatusTexto
+                                        </span>
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <!-- Slot vacío -->
+                                <div class="h-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                    </svg>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Leyenda -->
+    <div class="mt-6 rounded-xl bg-white/70 backdrop-blur-sm p-4 shadow-lg border border-white/20">
+        <div class="flex items-center gap-6 flex-wrap">
+            <span class="text-sm font-medium text-slate-700">Leyenda:</span>
+            <div class="flex items-center gap-2">
+                <div class="w-4 h-4 rounded bg-green-100 border-l-4 border-green-500"></div>
+                <span class="text-sm text-slate-600">Confirmado</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="w-4 h-4 rounded bg-yellow-100 border-l-4 border-yellow-500"></div>
+                <span class="text-sm text-slate-600">Pendiente</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="w-4 h-4 rounded bg-blue-100 border-l-4 border-blue-500"></div>
+                <span class="text-sm text-slate-600">En curso</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="w-4 h-4 rounded bg-slate-100 border-l-4 border-slate-500"></div>
+                <span class="text-sm text-slate-600">Completado</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private DateTime semanaActual = DateTime.Today;
+    private List<DiaCalendario> diasSemana = new();
+    private List<string> horasDelDia = new();
+    private List<TurnoMock> turnosMock = new();
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        IrHoy();
+        GenerarHorasDelDia();
+        CargarTurnosMock();
+    }
+
+    private void IrHoy()
+    {
+        semanaActual = DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek + (int)DayOfWeek.Monday);
+        ActualizarDiasSemana();
+    }
+
+    private void SemanaAnterior()
+    {
+        semanaActual = semanaActual.AddDays(-7);
+        ActualizarDiasSemana();
+    }
+
+    private void SemanaSiguiente()
+    {
+        semanaActual = semanaActual.AddDays(7);
+        ActualizarDiasSemana();
+    }
+
+    private void ActualizarDiasSemana()
+    {
+        diasSemana = new List<DiaCalendario>();
+        for (int i = 0; i < 7; i++)
+        {
+            var fecha = semanaActual.AddDays(i);
+            diasSemana.Add(new DiaCalendario
+            {
+                Fecha = fecha,
+                NombreDia = fecha.ToString("ddd").ToUpper(),
+                Numero = fecha.Day,
+                EsHoy = fecha.Date == DateTime.Today
+            });
+        }
+    }
+
+    private void GenerarHorasDelDia()
+    {
+        // Horario de 9:00 a 18:00
+        horasDelDia = new List<string>();
+        for (int h = 9; h <= 18; h++)
+        {
+            horasDelDia.Add($"{h:00}:00");
+        }
+    }
+
+    private void CargarTurnosMock()
+    {
+        // TODO Backend: GET /api/turnos/semana?fecha=...
+
+        var hoy = DateTime.Today;
+        turnosMock = new List<TurnoMock>
+        {
+            new TurnoMock
+            {
+                Fecha = hoy,
+                Hora = "09:00",
+                ClienteNombre = "María González",
+                Servicio = "Botox Facial",
+                Duracion = 30,
+                Status = "Confirmado",
+                ColorClass = "bg-green-50",
+                BorderClass = "border-green-500",
+                StatusClass = "bg-green-100 text-green-700",
+                StatusTexto = "✓"
+            },
+            new TurnoMock
+            {
+                Fecha = hoy,
+                Hora = "10:00",
+                ClienteNombre = "Ana Silva",
+                Servicio = "Relleno Labial",
+                Duracion = 45,
+                Status = "En curso",
+                ColorClass = "bg-blue-50",
+                BorderClass = "border-blue-500",
+                StatusClass = "bg-blue-100 text-blue-700",
+                StatusTexto = "⏳"
+            },
+            new TurnoMock
+            {
+                Fecha = hoy,
+                Hora = "15:00",
+                ClienteNombre = "Laura Fernández",
+                Servicio = "Limpieza Facial",
+                Duracion = 60,
+                Status = "Pendiente",
+                ColorClass = "bg-yellow-50",
+                BorderClass = "border-yellow-500",
+                StatusClass = "bg-yellow-100 text-yellow-700",
+                StatusTexto = "?"
+            },
+            new TurnoMock
+            {
+                Fecha = hoy.AddDays(1),
+                Hora = "11:00",
+                ClienteNombre = "Carlos Pérez",
+                Servicio = "Tratamiento Facial",
+                Duracion = 90,
+                Status = "Confirmado",
+                ColorClass = "bg-green-50",
+                BorderClass = "border-green-500",
+                StatusClass = "bg-green-100 text-green-700",
+                StatusTexto = "✓"
+            },
+            new TurnoMock
+            {
+                Fecha = hoy.AddDays(2),
+                Hora = "14:00",
+                ClienteNombre = "Pedro Martínez",
+                Servicio = "Botox",
+                Duracion = 30,
+                Status = "Pendiente",
+                ColorClass = "bg-yellow-50",
+                BorderClass = "border-yellow-500",
+                StatusClass = "bg-yellow-100 text-yellow-700",
+                StatusTexto = "?"
+            }
+        };
+    }
+
+    private TurnoMock? ObtenerTurno(DateTime fecha, string hora)
+    {
+        return turnosMock.FirstOrDefault(t => t.Fecha.Date == fecha.Date && t.Hora == hora);
+    }
+
+    private void ClickEnSlot(DateTime fecha, string hora)
+    {
+        if (!HasPermission(Permission.CreateAppointment))
+            return;
+
+        var turnoExistente = ObtenerTurno(fecha, hora);
+
+        if (turnoExistente != null)
+        {
+            // TODO: Abrir modal para ver/editar turno existente
+            Console.WriteLine($"Ver turno: {turnoExistente.ClienteNombre} - {turnoExistente.Servicio}");
+        }
+        else
+        {
+            // TODO: Abrir modal para crear nuevo turno
+            Console.WriteLine($"Crear turno para: {fecha.ToShortDateString()} a las {hora}");
+        }
+    }
+
+    private void AbrirModalNuevoTurno()
+    {
+        // TODO: Abrir modal de creación de turno
+        Console.WriteLine("Abrir modal nuevo turno");
+    }
+
+    private class DiaCalendario
+    {
+        public DateTime Fecha { get; set; }
+        public string NombreDia { get; set; } = string.Empty;
+        public int Numero { get; set; }
+        public bool EsHoy { get; set; }
+    }
+
+    private class TurnoMock
+    {
+        public DateTime Fecha { get; set; }
+        public string Hora { get; set; } = string.Empty;
+        public string ClienteNombre { get; set; } = string.Empty;
+        public string Servicio { get; set; } = string.Empty;
+        public int Duracion { get; set; }
+        public string Status { get; set; } = string.Empty;
+        public string ColorClass { get; set; } = string.Empty;
+        public string BorderClass { get; set; } = string.Empty;
+        public string StatusClass { get; set; } = string.Empty;
+        public string StatusTexto { get; set; } = string.Empty;
+    }
+}

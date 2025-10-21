@@ -1,0 +1,294 @@
+﻿@page "/configuracion/turnos"
+@rendermode InteractiveServer
+@using AlmaMedical.Web.Client.Base
+@using AlmaMedical.Web.Client.Services
+@using static AlmaMedical.Web.Client.Services.RolePermissionService
+@inherits AuthorizedComponentBase
+
+<PageTitle>Configuración - AlmaMedical</PageTitle>
+
+<div class="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50 to-pink-50 p-4 md:p-6 lg:p-8">
+    <!-- Header -->
+    <div class="mb-6">
+        <h1 class="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+            Configuración
+        </h1>
+        <p class="text-slate-600 mt-1">Configura los horarios de atención y ajustes del sistema</p>
+    </div>
+
+    @if (!HasPermission(Permission.ManageSettings))
+    {
+        <div class="rounded-2xl bg-red-50 border-2 border-red-200 p-6">
+            <div class="flex items-center gap-3">
+                <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <div>
+                    <h3 class="font-semibold text-red-900">Acceso Denegado</h3>
+                    <p class="text-sm text-red-700">No tenés permisos para acceder a la configuración.</p>
+                </div>
+            </div>
+        </div>
+        return;
+    }
+
+    <!-- Tabs -->
+    <div class="mb-6 flex gap-2 overflow-x-auto">
+        <button @onclick='() => tabActivo = "horarios"'
+                class="@(tabActivo == "horarios" ? "bg-white shadow-lg" : "bg-white/50") px-6 py-3 rounded-xl font-medium transition-all hover:bg-white">
+            <div class="flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Horarios de Atención
+            </div>
+        </button>
+        <button @onclick='() => tabActivo = "servicios"'
+                class="@(tabActivo == "servicios" ? "bg-white shadow-lg" : "bg-white/50") px-6 py-3 rounded-xl font-medium transition-all hover:bg-white">
+            <div class="flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+                Configuración de Servicios
+            </div>
+        </button>
+    </div>
+
+    @if (tabActivo == "horarios")
+    {
+        <!-- Horarios de Atención -->
+        <div class="rounded-2xl bg-white/70 backdrop-blur-sm p-6 shadow-lg border border-white/20 mb-6">
+            <h2 class="text-xl font-bold text-slate-800 mb-4">Horarios Semanales</h2>
+            <p class="text-sm text-slate-600 mb-6">Configura los días y horarios en los que atendés.</p>
+
+            <div class="space-y-4">
+                @foreach (var dia in diasSemana)
+                {
+                    <div class="p-4 rounded-xl bg-gradient-to-r from-slate-50 to-white border border-slate-200">
+                        <div class="flex items-center gap-4">
+                            <!-- Checkbox -->
+                            <label class="flex items-center gap-3 cursor-pointer flex-1">
+                                <input type="checkbox"
+                                       @bind="dia.Activo"
+                                       class="w-5 h-5 rounded border-slate-300 text-purple-600 focus:ring-purple-500" />
+                                <span class="font-semibold text-slate-700 w-24">@dia.Nombre</span>
+                            </label>
+
+                            @if (dia.Activo)
+                            {
+                                <!-- Horarios -->
+                                <div class="flex items-center gap-2 flex-1">
+                                    <input type="time"
+                                           value="@dia.HoraInicioString"
+                                           @onchange="e => dia.SetHoraInicio(e.Value?.ToString())"
+                                           class="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" />
+                                    <span class="text-slate-500">a</span>
+                                    <input type="time"
+                                           value="@dia.HoraFinString"
+                                           @onchange="e => dia.SetHoraFin(e.Value?.ToString())"
+                                           class="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" />
+                                </div>
+                            }
+                            else
+                            {
+                                <span class="text-slate-400 italic flex-1">Cerrado</span>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Configuración de Turnos -->
+        <div class="rounded-2xl bg-white/70 backdrop-blur-sm p-6 shadow-lg border border-white/20 mb-6">
+            <h2 class="text-xl font-bold text-slate-800 mb-4">Configuración de Turnos</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Duración Default -->
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">
+                        Duración default de turno
+                    </label>
+                    <select @bind="duracionDefault"
+                            class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                        <option value="15">15 minutos</option>
+                        <option value="30">30 minutos</option>
+                        <option value="45">45 minutos</option>
+                        <option value="60">1 hora</option>
+                        <option value="90">1 hora 30 minutos</option>
+                        <option value="120">2 horas</option>
+                    </select>
+                </div>
+
+                <!-- Buffer entre turnos -->
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">
+                        Tiempo de buffer entre turnos
+                    </label>
+                    <select @bind="bufferTurnos"
+                            class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                        <option value="0">Sin buffer</option>
+                        <option value="5">5 minutos</option>
+                        <option value="10">10 minutos</option>
+                        <option value="15">15 minutos</option>
+                    </select>
+                    <p class="text-xs text-slate-500 mt-1">Tiempo de descanso entre clientes</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones de acción -->
+        <div class="flex justify-end gap-3">
+            <button @onclick="GuardarConfiguracion"
+                    class="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all transform hover:scale-105 shadow-lg font-medium">
+                Guardar Cambios
+            </button>
+        </div>
+    }
+
+    @if (tabActivo == "servicios")
+    {
+        <!-- Configuración de Servicios -->
+        <div class="rounded-2xl bg-white/70 backdrop-blur-sm p-6 shadow-lg border border-white/20">
+            <h2 class="text-xl font-bold text-slate-800 mb-4">Duración por Servicio</h2>
+            <p class="text-sm text-slate-600 mb-6">Configura cuánto tiempo lleva cada servicio.</p>
+
+            <div class="space-y-3">
+                @foreach (var servicio in serviciosEjemplo)
+                {
+                    <div class="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-slate-50 to-white border border-slate-200">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                </svg>
+                            </div>
+                            <span class="font-medium text-slate-700">@servicio.Nombre</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <input type="number"
+                                   @bind="servicio.Duracion"
+                                   min="15"
+                                   step="15"
+                                   class="w-24 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-center" />
+                            <span class="text-slate-600">minutos</span>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="flex justify-end gap-3 mt-6">
+                <button @onclick="GuardarDuracionServicios"
+                        class="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all transform hover:scale-105 shadow-lg font-medium">
+                    Guardar Cambios
+                </button>
+            </div>
+        </div>
+    }
+
+    <!-- Mensaje de éxito -->
+    @if (mostrarMensaje)
+    {
+        <div class="fixed bottom-6 right-6 rounded-xl bg-green-500 text-white px-6 py-4 shadow-2xl animate-bounce">
+            <div class="flex items-center gap-3">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                <span class="font-medium">Configuración guardada correctamente</span>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private string tabActivo = "horarios";
+    private int duracionDefault = 60;
+    private int bufferTurnos = 0;
+    private bool mostrarMensaje = false;
+
+    private List<DiaConfiguracion> diasSemana = new();
+    private List<ServicioConfiguracion> serviciosEjemplo = new();
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        // Inicializar días de la semana
+        diasSemana = new List<DiaConfiguracion>
+        {
+            new DiaConfiguracion { Nombre = "Lunes", Activo = true },
+            new DiaConfiguracion { Nombre = "Martes", Activo = true },
+            new DiaConfiguracion { Nombre = "Miércoles", Activo = true },
+            new DiaConfiguracion { Nombre = "Jueves", Activo = true },
+            new DiaConfiguracion { Nombre = "Viernes", Activo = true },
+            new DiaConfiguracion { Nombre = "Sábado", Activo = false },
+            new DiaConfiguracion { Nombre = "Domingo", Activo = false }
+        };
+
+        // Inicializar horarios default
+        foreach (var dia in diasSemana)
+        {
+            if (dia.Nombre == "Sábado" || dia.Nombre == "Domingo")
+                dia.InicializarHoras("09:00", "13:00");
+            else
+                dia.InicializarHoras("09:00", "18:00");
+        }
+
+        // Servicios de ejemplo
+        serviciosEjemplo = new List<ServicioConfiguracion>
+        {
+            new ServicioConfiguracion { Nombre = "Botox Facial", Duracion = 30 },
+            new ServicioConfiguracion { Nombre = "Relleno Labial", Duracion = 45 },
+            new ServicioConfiguracion { Nombre = "Limpieza Facial", Duracion = 60 },
+            new ServicioConfiguracion { Nombre = "Tratamiento Antiedad", Duracion = 90 },
+            new ServicioConfiguracion { Nombre = "Depilación Láser", Duracion = 45 }
+        };
+
+        // TODO: Cargar desde localStorage o API
+        // LoadConfiguracion();
+    }
+
+    private async Task GuardarConfiguracion()
+    {
+        // TODO Backend: POST /api/configuracion/horarios
+        // Backend validará y guardará en DB
+
+        // Por ahora simulamos guardado
+        await Task.Delay(500);
+
+        mostrarMensaje = true;
+        StateHasChanged();
+
+        await Task.Delay(3000);
+        mostrarMensaje = false;
+        StateHasChanged();
+    }
+
+    private async Task GuardarDuracionServicios()
+    {
+        // TODO Backend: POST /api/configuracion/servicios
+
+        await Task.Delay(500);
+
+        mostrarMensaje = true;
+        StateHasChanged();
+
+        await Task.Delay(3000);
+        mostrarMensaje = false;
+        StateHasChanged();
+    }
+
+    private class DiaConfiguracion
+    {
+        public string Nombre { get; set; } = string.Empty;
+        public bool Activo { get; set; }
+        public string HoraInicioString { get; set; } = "09:00";
+        public string HoraFinString { get; set; } = "18:00";
+    }
+
+    private class ServicioConfiguracion
+    {
+        public string Nombre { get; set; } = string.Empty;
+        public int Duracion { get; set; } = 60;
+    }
+}
